@@ -2,8 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  output: "export",   // generate static files in /out for Render Static Site
-  trailingSlash: true, // ensures /reports → /reports/index.html resolves correctly
+  output: "standalone", // self-contained server bundle for Render / Docker deployments
 };
 
 export default nextConfig;
