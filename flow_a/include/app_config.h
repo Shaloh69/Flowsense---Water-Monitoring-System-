@@ -43,10 +43,12 @@
 #define LPM_TO_M3MIN        0.001f      // L/min  → m³/min (×0.001)
 #define L_TO_M3             0.001f      // litres → m³     (×0.001)
 
+// ── Default WiFi credentials (used when NVS has no saved credentials) ────────
+#define DEFAULT_WIFI_SSID       "Team Flores"
+#define DEFAULT_WIFI_PASS       "Lelachaiah1702"
+
 // ── Render cloud server ───────────────────────────────────────────────────────
-// Set to your Render URL after deployment, e.g. "https://flowsense.onrender.com"
-// Leave empty "" to disable cloud posting (local-only mode)
-#define RENDER_SERVER_URL       ""
+#define RENDER_SERVER_URL       "https://flowsense-server.onrender.com"
 
 // ── Task Periods ──────────────────────────────────────────────────────────────
 #define FLOW_TASK_PERIOD_MS     250

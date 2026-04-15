@@ -7,10 +7,10 @@
 
 #include "nvs_flash.h"
 #include "esp_log.h"
+#include "esp_phy_init.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "soc/rtc_cntl_reg.h"
-#include "soc/soc.h"
 
 static const char *TAG = "APP";
 
@@ -20,6 +20,11 @@ static const char *TAG = "APP";
 // peripheral quiet during the RF power spike, minimising total current.
 static void wifi_task(void *arg)
 {
+    // Erase any corrupt PHY calibration data left by a previous crash-mid-save.
+    // This is a one-time cost (~200 ms) that prevents phy_init from choking on
+    // a half-written calibration block and looping forever.
+    esp_phy_erase_cal_data_in_nvs();
+
     vTaskDelay(pdMS_TO_TICKS(4000));   // 4 s — let power rail fully settle
     wifi_manager_init();
     http_poster_start();

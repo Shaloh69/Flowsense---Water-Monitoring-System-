@@ -181,7 +181,13 @@ app.post("/api/data", (req: Request, res: Response) => {
   broadcast(record); // push to all open browser tabs instantly
 
   console.log(
-    `[${record.timestamp}] IN:${record.flow_in_m3h} OUT:${record.flow_out_m3h} PSI:${record.pressure_psi}`,
+    `[ESP32] ${record.timestamp}` +
+    ` | IN: ${record.flow_in_m3h.toFixed(6)} m³/min` +
+    ` | OUT: ${record.flow_out_m3h.toFixed(6)} m³/min` +
+    ` | VolIN: ${record.volume_in_m3.toFixed(5)} m³` +
+    ` | VolOUT: ${record.volume_out_m3.toFixed(5)} m³` +
+    ` | Pressure: ${record.pressure_psi.toFixed(2)} PSI` +
+    ` | clients: ${sseClients.size}`,
   );
   res.json({ ok: true, stored: readings.length });
 });

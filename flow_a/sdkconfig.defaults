@@ -5,11 +5,12 @@ CONFIG_ESP_BROWNOUT_DET=n
 # This directly reduces the current spike that causes RTCWDT_RTC_RESET on weak USB power
 CONFIG_ESP32_PHY_MAX_WIFI_TX_POWER=10
 
-# RF calibration — store result in NVS so full cal only runs ONCE
-CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE=y
-
-# Use partial calibration on subsequent boots (much faster, less current draw)
-CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION=n
+# RF calibration — DISABLE NVS storage to break the crash-before-save boot loop.
+# When enabled + crashing during phy_init, calibration data never saves → every
+# boot re-runs full calibration → crashes again → infinite loop.
+# With this off, full calibration runs every boot (adds ~200ms) but no NVS dependency.
+CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE=n
+CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE=n
 
 # Float support in snprintf — nano formatting breaks %f
 CONFIG_NEWLIB_NANO_FORMATTING=n

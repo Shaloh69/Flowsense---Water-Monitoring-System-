@@ -191,12 +191,20 @@ esp_err_t wifi_manager_init(void)
     esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP,
                                         wifi_event_handler, NULL, NULL);
 
-    if (has_credentials()) {
-        // ── APSTA mode: keep hotspot + connect to router ──────────────────
+    // ── APSTA mode always — use NVS credentials or fall back to defaults ─────
+    {
         char ssid[64] = {0};
         char pass[64] = {0};
-        nvs_read_str(NVS_KEY_SSID, ssid, sizeof(ssid));
-        nvs_read_str(NVS_KEY_PASS, pass, sizeof(pass));
+
+        if (has_credentials()) {
+            nvs_read_str(NVS_KEY_SSID, ssid, sizeof(ssid));
+            nvs_read_str(NVS_KEY_PASS, pass, sizeof(pass));
+            ESP_LOGI(TAG, "Using saved credentials — SSID: \"%s\"", ssid);
+        } else {
+            strlcpy(ssid, DEFAULT_WIFI_SSID, sizeof(ssid));
+            strlcpy(pass, DEFAULT_WIFI_PASS, sizeof(pass));
+            ESP_LOGI(TAG, "No saved credentials — using default SSID: \"%s\"", ssid);
+        }
 
         esp_netif_create_default_wifi_sta();
         esp_wifi_set_mode(WIFI_MODE_APSTA);
@@ -209,14 +217,7 @@ esp_err_t wifi_manager_init(void)
         esp_wifi_set_config(WIFI_IF_STA, &sta_cfg);
 
         s_provisioning = false;
-        ESP_LOGI(TAG, "APSTA mode — STA target: \"%s\"", ssid);
-
-    } else {
-        // ── AP-only provisioning mode ─────────────────────────────────────
-        esp_wifi_set_mode(WIFI_MODE_AP);
-        configure_ap();
-        s_provisioning = true;
-        ESP_LOGI(TAG, "AP-only provisioning mode — go to http://" AP_IP "/setup");
+        ESP_LOGI(TAG, "APSTA mode — connecting to \"%s\"", ssid);
     }
 
     // Use RAM storage — prevents WiFi driver from accessing flash during operation
