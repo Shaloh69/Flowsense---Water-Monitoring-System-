@@ -1,0 +1,18 @@
+# Brownout detector — DISABLED (HLK-PM01 / USB power cannot supply WiFi peak)
+CONFIG_ESP_BROWNOUT_DET=n
+
+# Reduce WiFi TX power to lower peak current during phy_init (default 20 dBm → 10 dBm)
+# This directly reduces the current spike that causes RTCWDT_RTC_RESET on weak USB power
+CONFIG_ESP32_PHY_MAX_WIFI_TX_POWER=10
+
+# RF calibration — store result in NVS so full cal only runs ONCE
+CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE=y
+
+# Use partial calibration on subsequent boots (much faster, less current draw)
+CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION=n
+
+# Float support in snprintf — nano formatting breaks %f
+CONFIG_NEWLIB_NANO_FORMATTING=n
+
+# Flash size
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y

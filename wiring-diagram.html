@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Flowsense – Full Wiring Diagram</title>
+<style>
+  @page { size: A3 landscape; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #e8eaed; width: 100%; }
+  .print-btn {
+    position: fixed; top: 14px; right: 14px;
+    padding: 10px 22px; background: #1d4ed8; color: #fff;
+    border: none; border-radius: 8px; cursor: pointer;
+    font-size: 14px; font-weight: 600; font-family: Arial, sans-serif;
+    z-index: 999; box-shadow: 0 2px 12px rgba(0,0,0,.3);
+    letter-spacing: .3px;
+  }
+  .print-btn:hover { background: #1e40af; }
+  @media print {
+    html, body { background: white; }
+    .print-btn { display: none; }
+    svg { width: 100vw !important; height: auto !important; }
+  }
+  svg { display: block; margin: 0 auto; max-width: 100%; }
+</style>
+</head>
+<body>
+<button class="print-btn" onclick="window.print()">🖨  Print / Save as PDF</button>
+
+<!-- A3 landscape: 420mm × 297mm → 1587 × 1123 px at 96 dpi -->
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1587" height="1123" viewBox="0 0 1587 1123"
+     font-family="Arial, Helvetica, sans-serif">
+<defs>
+  <!-- Arrow markers -->
+  <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L0,6 L8,3 Z" fill="#555"/>
+  </marker>
+  <marker id="arr-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L0,6 L8,3 Z" fill="#dc2626"/>
+  </marker>
+  <marker id="arr-blk" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L0,6 L8,3 Z" fill="#1f2937"/>
+  </marker>
+  <marker id="arr-ylw" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L0,6 L8,3 Z" fill="#d97706"/>
+  </marker>
+  <marker id="arr-blu" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L0,6 L8,3 Z" fill="#2563eb"/>
+  </marker>
+  <marker id="arr-grn" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L0,6 L8,3 Z" fill="#16a34a"/>
+  </marker>
+  <marker id="arr-orn" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L0,6 L8,3 Z" fill="#ea580c"/>
+  </marker>
+  <!-- Drop shadow -->
+  <filter id="shadow" x="-5%" y="-5%" width="115%" height="115%">
+    <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.15"/>
+  </filter>
+</defs>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PAGE BACKGROUND & BORDER                               -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<rect width="1587" height="1123" fill="white"/>
+<rect x="8" y="8" width="1571" height="1107" fill="none" stroke="#374151" stroke-width="2.5"/>
+<rect x="12" y="12" width="1563" height="1099" fill="none" stroke="#9ca3af" stroke-width="0.8"/>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TITLE BLOCK (bottom strip)                             -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<rect x="8" y="1065" width="1571" height="50" fill="#1e3a5f" stroke="#374151" stroke-width="2"/>
+<line x1="700" y1="1065" x2="700" y2="1115" stroke="#4b6f9f" stroke-width="1"/>
+<line x1="1100" y1="1065" x2="1100" y2="1115" stroke="#4b6f9f" stroke-width="1"/>
+<line x1="1320" y1="1065" x2="1320" y2="1115" stroke="#4b6f9f" stroke-width="1"/>
+<text x="354" y="1083" font-size="9" fill="#93c5fd" font-weight="bold" text-anchor="middle" letter-spacing="2">FLOWSENSE WATER MONITORING SYSTEM</text>
+<text x="354" y="1100" font-size="13" fill="white" font-weight="bold" text-anchor="middle">FULL HARDWARE WIRING DIAGRAM</text>
+<text x="900" y="1083" font-size="8" fill="#93c5fd" text-anchor="middle">COMPONENTS</text>
+<text x="900" y="1096" font-size="8.5" fill="white" text-anchor="middle">ESP32 DevKit V1 · HLK-PM01 · YF-S201 ×2</text>
+<text x="900" y="1108" font-size="8.5" fill="white" text-anchor="middle">ADS1115 · Pressure Transducer · LCD 20×4 (PCF8574T)</text>
+<text x="1210" y="1083" font-size="8" fill="#93c5fd" text-anchor="middle">DATE / REV</text>
+<text x="1210" y="1096" font-size="8.5" fill="white" text-anchor="middle">2026-04-12 · Rev 2</text>
+<text x="1210" y="1108" font-size="8.5" fill="white" text-anchor="middle">Sheet 1 of 1</text>
+<text x="1430" y="1083" font-size="8" fill="#93c5fd" text-anchor="middle">SCALE</text>
+<text x="1430" y="1096" font-size="8.5" fill="white" text-anchor="middle">NOT TO SCALE</text>
+<text x="1430" y="1108" font-size="8.5" fill="white" text-anchor="middle">A3 LANDSCAPE</text>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION LABEL – POWER (top)                            -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<rect x="20" y="20" width="130" height="20" fill="#1e3a5f" rx="3"/>
+<text x="85" y="33" font-size="9" fill="#93c5fd" font-weight="bold" text-anchor="middle" letter-spacing="1.5">MAINS POWER</text>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ⚡ HLK-PM01  (220V AC → 5V DC 600mA)                  -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<g id="hlk" filter="url(#shadow)">
+  <!-- Danger zone background -->
+  <rect x="20" y="44" width="200" height="160" fill="#fff3cd" stroke="#f59e0b" stroke-width="1.5" rx="6" stroke-dasharray="6,3"/>
+  <text x="120" y="58" font-size="8" fill="#b45309" text-anchor="middle" font-weight="bold">⚠ 220V AC — DANGER ZONE</text>
+
+  <!-- Module box -->
+  <rect x="40" y="64" width="160" height="130" fill="#fef3c7" stroke="#d97706" stroke-width="2" rx="5"/>
+  <rect x="40" y="64" width="160" height="22" fill="#d97706" rx="5"/>
+  <rect x="40" y="75" width="160" height="11" fill="#d97706"/>
+  <text x="120" y="79" font-size="11" fill="white" font-weight="bold" text-anchor="middle">HLK-PM01</text>
+  <text x="120" y="93" font-size="8" fill="#7c2d12" text-anchor="middle">220V AC → 5V DC / 600mA</text>
+
+  <!-- AC terminals (left side) -->
+  <rect x="40" y="100" width="50" height="18" fill="#fee2e2" stroke="#dc2626" stroke-width="1" rx="2"/>
+  <text x="65" y="112" font-size="9" fill="#dc2626" font-weight="bold" text-anchor="middle">L  (LIVE)</text>
+  <rect x="40" y="124" width="50" height="18" fill="#e0f2fe" stroke="#0284c7" stroke-width="1" rx="2"/>
+  <text x="65" y="136" font-size="9" fill="#0284c7" font-weight="bold" text-anchor="middle">N  (NEU)</text>
+  <text x="60" y="160" font-size="7.5" fill="#92400e" text-anchor="middle">AC INPUT</text>
+  <text x="60" y="170" font-size="7.5" fill="#92400e" text-anchor="middle">220V ~ 50Hz</text>
+  <text x="60" y="180" font-size="7.5" fill="#92400e" text-anchor="middle">MAX 600mA</text>
+
+  <!-- DC terminals (right side) -->
+  <rect x="150" y="100" width="50" height="18" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5" rx="2"/>
+  <text x="175" y="112" font-size="9" fill="#16a34a" font-weight="bold" text-anchor="middle">+Vo 5V</text>
+  <rect x="150" y="124" width="50" height="18" fill="#f3f4f6" stroke="#374151" stroke-width="1.5" rx="2"/>
+  <text x="175" y="136" font-size="9" fill="#374151" font-weight="bold" text-anchor="middle">−Vo GND</text>
+  <text x="175" y="160" font-size="7.5" fill="#166534" text-anchor="middle">DC OUTPUT</text>
+  <text x="175" y="170" font-size="7.5" fill="#166534" text-anchor="middle">5V / 600mA</text>
+</g>
+
+<!-- AC mains label -->
+<text x="28" y="114" font-size="8" fill="#dc2626" font-weight="bold">L</text>
+<text x="28" y="138" font-size="8" fill="#0284c7" font-weight="bold">N</text>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- POWER RAILS                                            -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 5V rail -->
+<line x1="200" y1="109" x2="1560" y2="109" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="8,3"/>
+<rect x="202" y="100" width="45" height="14" fill="#fee2e2" stroke="#dc2626" stroke-width="1" rx="2"/>
+<text x="224" y="110" font-size="8.5" fill="#dc2626" font-weight="bold" text-anchor="middle">5V BUS</text>
+
+<!-- GND rail -->
+<line x1="200" y1="133" x2="1560" y2="133" stroke="#1f2937" stroke-width="2.5" stroke-dasharray="8,3"/>
+<rect x="202" y="124" width="52" height="14" fill="#f3f4f6" stroke="#374151" stroke-width="1" rx="2"/>
+<text x="228" y="134" font-size="8.5" fill="#1f2937" font-weight="bold" text-anchor="middle">GND BUS</text>
+
+<!-- Rail tick marks -->
+<g stroke-width="1.5" font-size="7" fill="#999" text-anchor="middle">
+  <!-- 5V ticks -->
+  <line x1="340" y1="104" x2="340" y2="114" stroke="#dc2626"/>
+  <line x1="500" y1="104" x2="500" y2="114" stroke="#dc2626"/>
+  <line x1="700" y1="104" x2="700" y2="114" stroke="#dc2626"/>
+  <line x1="900" y1="104" x2="900" y2="114" stroke="#dc2626"/>
+  <line x1="1150" y1="104" x2="1150" y2="114" stroke="#dc2626"/>
+  <line x1="1380" y1="104" x2="1380" y2="114" stroke="#dc2626"/>
+  <!-- GND ticks -->
+  <line x1="340" y1="128" x2="340" y2="138" stroke="#1f2937"/>
+  <line x1="500" y1="128" x2="500" y2="138" stroke="#1f2937"/>
+  <line x1="700" y1="128" x2="700" y2="138" stroke="#1f2937"/>
+  <line x1="900" y1="128" x2="900" y2="138" stroke="#1f2937"/>
+  <line x1="1150" y1="128" x2="1150" y2="138" stroke="#1f2937"/>
+  <line x1="1380" y1="128" x2="1380" y2="138" stroke="#1f2937"/>
+</g>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ESP32 DevKit V1  (center)                              -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<g id="esp32" filter="url(#shadow)">
+  <rect x="580" y="175" width="290" height="840" fill="#f0fdf4" stroke="#15803d" stroke-width="2.5" rx="8"/>
+  <!-- Header bar -->
+  <rect x="580" y="175" width="290" height="30" fill="#15803d" rx="8"/>
+  <rect x="580" y="193" width="290" height="12" fill="#15803d"/>
+  <text x="725" y="196" font-size="12" fill="white" font-weight="bold" text-anchor="middle">ESP32 DevKit V1</text>
+  <!-- USB connector indicator -->
+  <rect x="690" y="175" width="70" height="14" fill="#6b7280" rx="3"/>
+  <text x="725" y="185" font-size="7" fill="white" text-anchor="middle">USB (UART)</text>
+
+  <!-- Module body -->
+  <rect x="610" y="210" width="230" height="780" fill="#d1fae5" stroke="#86efac" stroke-width="1" rx="4"/>
+  <text x="725" y="235" font-size="9" fill="#166534" text-anchor="middle" font-weight="bold">Xtensa LX6 240MHz</text>
+  <text x="725" y="248" font-size="8" fill="#4ade80" text-anchor="middle">520KB SRAM · 4MB Flash</text>
+
+  <!-- ── LEFT PINS (right edge of left column) ──────────── -->
+  <!-- pin rows: y starts at 278, spacing 28 -->
+
+  <!-- GND -->
+  <rect x="580" y="268" width="30" height="18" fill="#e5e7eb" stroke="#6b7280" stroke-width="1" rx="2"/>
+  <text x="595" y="280" font-size="8" fill="#374151" text-anchor="middle" font-weight="bold">GND</text>
+  <text x="618" y="280" font-size="8" fill="#6b7280">GND</text>
+
+  <!-- GPIO23 -->
+  <rect x="580" y="296" width="30" height="18" fill="#dbeafe" stroke="#60a5fa" stroke-width="1" rx="2"/>
+  <text x="595" y="308" font-size="8" fill="#1d4ed8" text-anchor="middle" font-weight="bold">23</text>
+  <text x="618" y="308" font-size="8" fill="#6b7280">GPIO23</text>
+
+  <!-- GPIO22 = SCL ★ -->
+  <rect x="580" y="324" width="30" height="18" fill="#bbf7d0" stroke="#16a34a" stroke-width="2" rx="2"/>
+  <text x="595" y="336" font-size="8" fill="#14532d" text-anchor="middle" font-weight="bold">22</text>
+  <text x="618" y="336" font-size="8.5" fill="#15803d" font-weight="bold">GPIO22 ← I²C SCL</text>
+
+  <!-- TXD0 -->
+  <rect x="580" y="352" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="595" y="364" font-size="7" fill="#6b7280" text-anchor="middle">TXD</text>
+  <text x="618" y="364" font-size="8" fill="#9ca3af">TXD0 (GPIO1)</text>
+
+  <!-- RXD0 -->
+  <rect x="580" y="380" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="595" y="392" font-size="7" fill="#6b7280" text-anchor="middle">RXD</text>
+  <text x="618" y="392" font-size="8" fill="#9ca3af">RXD0 (GPIO3)</text>
+
+  <!-- GPIO21 = SDA ★ -->
+  <rect x="580" y="408" width="30" height="18" fill="#bbf7d0" stroke="#16a34a" stroke-width="2" rx="2"/>
+  <text x="595" y="420" font-size="8" fill="#14532d" text-anchor="middle" font-weight="bold">21</text>
+  <text x="618" y="420" font-size="8.5" fill="#15803d" font-weight="bold">GPIO21 ← I²C SDA</text>
+
+  <!-- GND -->
+  <rect x="580" y="436" width="30" height="18" fill="#e5e7eb" stroke="#6b7280" stroke-width="1" rx="2"/>
+  <text x="595" y="448" font-size="8" fill="#374151" text-anchor="middle" font-weight="bold">GND</text>
+  <text x="618" y="448" font-size="8" fill="#6b7280">GND</text>
+
+  <!-- GPIO19 -->
+  <rect x="580" y="464" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="595" y="476" font-size="8" fill="#6b7280" text-anchor="middle">19</text>
+  <text x="618" y="476" font-size="8" fill="#9ca3af">GPIO19</text>
+
+  <!-- GPIO18 -->
+  <rect x="580" y="492" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="595" y="504" font-size="8" fill="#6b7280" text-anchor="middle">18</text>
+  <text x="618" y="504" font-size="8" fill="#9ca3af">GPIO18</text>
+
+  <!-- GPIO5 -->
+  <rect x="580" y="520" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="595" y="532" font-size="8" fill="#6b7280" text-anchor="middle">5</text>
+  <text x="618" y="532" font-size="8" fill="#9ca3af">GPIO5</text>
+
+  <!-- GPIO17 -->
+  <rect x="580" y="548" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="595" y="560" font-size="8" fill="#6b7280" text-anchor="middle">17</text>
+  <text x="618" y="560" font-size="8" fill="#9ca3af">GPIO17</text>
+
+  <!-- GPIO16 -->
+  <rect x="580" y="576" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="595" y="588" font-size="8" fill="#6b7280" text-anchor="middle">16</text>
+  <text x="618" y="588" font-size="8" fill="#9ca3af">GPIO16</text>
+
+  <!-- GPIO4 -->
+  <rect x="580" y="604" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="595" y="616" font-size="8" fill="#6b7280" text-anchor="middle">4</text>
+  <text x="618" y="616" font-size="8" fill="#9ca3af">GPIO4</text>
+
+  <!-- GPIO0 = BOOT (do not use) -->
+  <rect x="580" y="632" width="30" height="18" fill="#fee2e2" stroke="#dc2626" stroke-width="1" rx="2"/>
+  <text x="595" y="644" font-size="7" fill="#dc2626" text-anchor="middle" font-weight="bold">BOOT</text>
+  <text x="618" y="644" font-size="8" fill="#dc2626">GPIO0 — DO NOT USE</text>
+
+  <!-- GPIO2 -->
+  <rect x="580" y="660" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="595" y="672" font-size="8" fill="#6b7280" text-anchor="middle">2</text>
+  <text x="618" y="672" font-size="8" fill="#9ca3af">GPIO2</text>
+
+  <!-- GPIO15 -->
+  <rect x="580" y="688" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="595" y="700" font-size="8" fill="#6b7280" text-anchor="middle">15</text>
+  <text x="618" y="700" font-size="8" fill="#9ca3af">GPIO15</text>
+
+  <!-- 3V3 ★ -->
+  <rect x="580" y="716" width="30" height="18" fill="#fce7f3" stroke="#db2777" stroke-width="2" rx="2"/>
+  <text x="595" y="728" font-size="7.5" fill="#9d174d" text-anchor="middle" font-weight="bold">3V3</text>
+  <text x="618" y="728" font-size="8.5" fill="#be185d" font-weight="bold">3.3V OUTPUT ← ADS1115 · LCD</text>
+
+  <!-- ── RIGHT PINS (left edge of right column) ─────────── -->
+  <!-- EN -->
+  <rect x="840" y="268" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="855" y="280" font-size="7.5" fill="#6b7280" text-anchor="middle">EN</text>
+  <text x="830" y="280" font-size="8" fill="#9ca3af" text-anchor="end">ENABLE</text>
+
+  <!-- GPIO36 VP -->
+  <rect x="840" y="296" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="855" y="308" font-size="7.5" fill="#6b7280" text-anchor="middle">VP</text>
+  <text x="830" y="308" font-size="8" fill="#9ca3af" text-anchor="end">GPIO36 (ADC)</text>
+
+  <!-- GPIO39 VN -->
+  <rect x="840" y="324" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="855" y="336" font-size="7.5" fill="#6b7280" text-anchor="middle">VN</text>
+  <text x="830" y="336" font-size="8" fill="#9ca3af" text-anchor="end">GPIO39 (ADC)</text>
+
+  <!-- GPIO34 -->
+  <rect x="840" y="352" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="855" y="364" font-size="8" fill="#6b7280" text-anchor="middle">34</text>
+  <text x="830" y="364" font-size="8" fill="#9ca3af" text-anchor="end">GPIO34</text>
+
+  <!-- GPIO35 -->
+  <rect x="840" y="380" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="855" y="392" font-size="8" fill="#6b7280" text-anchor="middle">35</text>
+  <text x="830" y="392" font-size="8" fill="#9ca3af" text-anchor="end">GPIO35</text>
+
+  <!-- GPIO32 -->
+  <rect x="840" y="408" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="855" y="420" font-size="8" fill="#6b7280" text-anchor="middle">32</text>
+  <text x="830" y="420" font-size="8" fill="#9ca3af" text-anchor="end">GPIO32</text>
+
+  <!-- GPIO33 -->
+  <rect x="840" y="436" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="855" y="448" font-size="8" fill="#6b7280" text-anchor="middle">33</text>
+  <text x="830" y="448" font-size="8" fill="#9ca3af" text-anchor="end">GPIO33</text>
+
+  <!-- GPIO25 = FLOW IN ★ -->
+  <rect x="840" y="464" width="30" height="18" fill="#fef9c3" stroke="#ca8a04" stroke-width="2" rx="2"/>
+  <text x="855" y="476" font-size="8" fill="#713f12" text-anchor="middle" font-weight="bold">25</text>
+  <text x="830" y="476" font-size="8.5" fill="#92400e" font-weight="bold" text-anchor="end">GPIO25 ← FLOW INLET</text>
+
+  <!-- GPIO26 = FLOW OUT ★ -->
+  <rect x="840" y="492" width="30" height="18" fill="#fef9c3" stroke="#ca8a04" stroke-width="2" rx="2"/>
+  <text x="855" y="504" font-size="8" fill="#713f12" text-anchor="middle" font-weight="bold">26</text>
+  <text x="830" y="504" font-size="8.5" fill="#92400e" font-weight="bold" text-anchor="end">GPIO26 ← FLOW OUTLET</text>
+
+  <!-- GPIO27 -->
+  <rect x="840" y="520" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="855" y="532" font-size="8" fill="#6b7280" text-anchor="middle">27</text>
+  <text x="830" y="532" font-size="8" fill="#9ca3af" text-anchor="end">GPIO27</text>
+
+  <!-- GPIO14 -->
+  <rect x="840" y="548" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="855" y="560" font-size="8" fill="#6b7280" text-anchor="middle">14</text>
+  <text x="830" y="560" font-size="8" fill="#9ca3af" text-anchor="end">GPIO14</text>
+
+  <!-- GPIO12 -->
+  <rect x="840" y="576" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="855" y="588" font-size="8" fill="#6b7280" text-anchor="middle">12</text>
+  <text x="830" y="588" font-size="8" fill="#9ca3af" text-anchor="end">GPIO12</text>
+
+  <!-- GND -->
+  <rect x="840" y="604" width="30" height="18" fill="#e5e7eb" stroke="#6b7280" stroke-width="1" rx="2"/>
+  <text x="855" y="616" font-size="8" fill="#374151" text-anchor="middle" font-weight="bold">GND</text>
+  <text x="830" y="616" font-size="8" fill="#6b7280" text-anchor="end">GND</text>
+
+  <!-- GPIO13 -->
+  <rect x="840" y="632" width="30" height="18" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" rx="2"/>
+  <text x="855" y="644" font-size="8" fill="#6b7280" text-anchor="middle">13</text>
+  <text x="830" y="644" font-size="8" fill="#9ca3af" text-anchor="end">GPIO13</text>
+
+  <!-- VIN 5V ★ -->
+  <rect x="840" y="660" width="30" height="18" fill="#dcfce7" stroke="#16a34a" stroke-width="2" rx="2"/>
+  <text x="855" y="672" font-size="7.5" fill="#14532d" text-anchor="middle" font-weight="bold">VIN</text>
+  <text x="830" y="672" font-size="8.5" fill="#166534" font-weight="bold" text-anchor="end">5V INPUT ← HLK-PM01</text>
+
+  <!-- ESP32 divider line -->
+  <line x1="610" y1="740" x2="840" y2="740" stroke="#86efac" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="725" y="765" font-size="8" fill="#4ade80" text-anchor="middle">UNUSED PINS NOT LISTED</text>
+  <text x="725" y="780" font-size="8" fill="#4ade80" text-anchor="middle">DO NOT CONNECT GPIO0 (BOOT)</text>
+  <text x="725" y="800" font-size="8" fill="#4ade80" text-anchor="middle">DURING NORMAL OPERATION</text>
+
+  <!-- WiFi antenna area -->
+  <rect x="640" y="820" width="170" height="60" fill="#ecfdf5" stroke="#86efac" stroke-width="1" rx="4" stroke-dasharray="3,2"/>
+  <text x="725" y="844" font-size="9" fill="#15803d" text-anchor="middle" font-weight="bold">📡 WiFi 802.11 b/g/n</text>
+  <text x="725" y="858" font-size="8" fill="#4ade80" text-anchor="middle">AP Mode: "Flowsense"</text>
+  <text x="725" y="870" font-size="7.5" fill="#4ade80" text-anchor="middle">APSTA: AP + STA simultaneous</text>
+
+  <!-- Onboard LEDs note -->
+  <rect x="640" y="892" width="170" height="28" fill="#f0fdf4" stroke="#86efac" stroke-width="1" rx="3"/>
+  <text x="725" y="906" font-size="7.5" fill="#15803d" text-anchor="middle">Onboard LED: GPIO2 (blue)</text>
+  <text x="725" y="917" font-size="7.5" fill="#15803d" text-anchor="middle">Power LED: always on</text>
+</g>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- POWER WIRES: HLK → Rails                               -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- +Vo → 5V rail -->
+<polyline points="200,109 200,109" stroke="#dc2626" stroke-width="2.5" fill="none"/>
+<!-- Already connected at x=200 by the rail -->
+
+<!-- +Vo terminal to rail -->
+<line x1="200" y1="109" x2="200" y2="109" stroke="#dc2626" stroke-width="2"/>
+
+<!-- ESP32 VIN from 5V rail -->
+<polyline points="870,109 930,109 930,669 870,669"
+  stroke="#dc2626" stroke-width="2" fill="none" marker-end="url(#arr-red)"/>
+<text x="932" y="400" font-size="8" fill="#dc2626" transform="rotate(90,932,400)">5V → ESP32 VIN</text>
+
+<!-- ESP32 GND to GND rail -->
+<polyline points="870,613 940,613 940,133 200,133"
+  stroke="#1f2937" stroke-width="2" fill="none"/>
+<circle cx="870" cy="613" r="3" fill="#1f2937"/>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- YF-S201 INLET FLOW SENSOR  (left side)                 -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<g id="flow-in" filter="url(#shadow)">
+  <rect x="20" y="230" width="180" height="140" fill="#fffbeb" stroke="#d97706" stroke-width="2" rx="6"/>
+  <rect x="20" y="230" width="180" height="22" fill="#d97706" rx="6"/>
+  <rect x="20" y="240" width="180" height="12" fill="#d97706"/>
+  <text x="110" y="245" font-size="10" fill="white" font-weight="bold" text-anchor="middle">YF-S201 — INLET</text>
+  <text x="110" y="263" font-size="8" fill="#92400e" text-anchor="middle">Hall-Effect Flow Sensor</text>
+  <text x="110" y="275" font-size="8" fill="#6b7280" text-anchor="middle">5V  ·  0.3–6 L/min  ·  7.5 pulse/L</text>
+
+  <!-- Wires -->
+  <rect x="30" y="285" width="48" height="16" fill="#fee2e2" stroke="#dc2626" rx="2"/>
+  <text x="54" y="296" font-size="8" fill="#dc2626" font-weight="bold" text-anchor="middle">VCC 5V</text>
+
+  <rect x="30" y="307" width="48" height="16" fill="#f3f4f6" stroke="#374151" rx="2"/>
+  <text x="54" y="318" font-size="8" fill="#374151" font-weight="bold" text-anchor="middle">GND</text>
+
+  <rect x="30" y="329" width="48" height="16" fill="#fef9c3" stroke="#ca8a04" rx="2"/>
+  <text x="54" y="340" font-size="8" fill="#92400e" font-weight="bold" text-anchor="middle">SIG (YEL)</text>
+
+  <text x="135" y="296" font-size="7.5" fill="#dc2626">→ 5V Rail</text>
+  <text x="135" y="318" font-size="7.5" fill="#374151">→ GND Rail</text>
+  <text x="135" y="340" font-size="7.5" fill="#92400e">→ Divider → GPIO25</text>
+  <text x="110" y="360" font-size="7.5" fill="#6b7280" text-anchor="middle">Wire: Red / Black / Yellow</text>
+</g>
+
+<!-- YF-S201 Inlet voltage divider -->
+<g id="div-in">
+  <rect x="235" y="295" width="145" height="76" fill="#fefce8" stroke="#eab308" stroke-width="1.5" rx="4"/>
+  <text x="307" y="308" font-size="8" fill="#713f12" text-anchor="middle" font-weight="bold">VOLTAGE DIVIDER (3.3V clamp)</text>
+  <!-- R1 -->
+  <rect x="248" y="316" width="50" height="16" fill="#fff7ed" stroke="#ea580c" rx="2"/>
+  <text x="273" y="327" font-size="9" fill="#ea580c" text-anchor="middle">R1 = 1kΩ</text>
+  <!-- R2 -->
+  <rect x="318" y="316" width="50" height="16" fill="#fff7ed" stroke="#ea580c" rx="2"/>
+  <text x="343" y="327" font-size="9" fill="#ea580c" text-anchor="middle">R2 = 2kΩ</text>
+  <text x="307" y="348" font-size="7.5" fill="#92400e" text-anchor="middle">SIG → R1 → node → GPIO25</text>
+  <text x="307" y="360" font-size="7.5" fill="#92400e" text-anchor="middle">node → R2 → GND</text>
+  <text x="307" y="372" font-size="7" fill="#6b7280" text-anchor="middle">5V → 3.33V (safe for ESP32)</text>
+</g>
+
+<!-- Wires: Inlet sensor to ESP32 -->
+<!-- VCC: sensor to 5V rail -->
+<polyline points="78,285 78,264 340,264 340,109"
+  stroke="#dc2626" stroke-width="1.8" fill="none" marker-end="url(#arr-red)"/>
+<!-- GND: sensor to GND rail -->
+<polyline points="54,323 54,278 500,278 500,133"
+  stroke="#1f2937" stroke-width="1.8" fill="none" marker-end="url(#arr-blk)"/>
+<!-- Signal: sensor → divider → GPIO25 -->
+<line x1="78" y1="337" x2="235" y2="337" stroke="#d97706" stroke-width="1.8"/>
+<!-- Divider to GPIO25 -->
+<polyline points="380" y1="325" />
+<line x1="380" y1="323" x2="490" y2="323" stroke="#d97706" stroke-width="1.8"/>
+<polyline points="490,323 490,473 870,473"
+  stroke="#d97706" stroke-width="1.8" fill="none" marker-end="url(#arr-ylw)"/>
+<text x="555" y="470" font-size="7.5" fill="#d97706" font-weight="bold">GPIO25</text>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- YF-S201 OUTLET FLOW SENSOR                             -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<g id="flow-out" filter="url(#shadow)">
+  <rect x="20" y="420" width="180" height="140" fill="#fffbeb" stroke="#d97706" stroke-width="2" rx="6"/>
+  <rect x="20" y="420" width="180" height="22" fill="#d97706" rx="6"/>
+  <rect x="20" y="430" width="180" height="12" fill="#d97706"/>
+  <text x="110" y="435" font-size="10" fill="white" font-weight="bold" text-anchor="middle">YF-S201 — OUTLET</text>
+  <text x="110" y="453" font-size="8" fill="#92400e" text-anchor="middle">Hall-Effect Flow Sensor</text>
+  <text x="110" y="465" font-size="8" fill="#6b7280" text-anchor="middle">5V  ·  0.3–6 L/min  ·  7.5 pulse/L</text>
+
+  <rect x="30" y="475" width="48" height="16" fill="#fee2e2" stroke="#dc2626" rx="2"/>
+  <text x="54" y="486" font-size="8" fill="#dc2626" font-weight="bold" text-anchor="middle">VCC 5V</text>
+
+  <rect x="30" y="497" width="48" height="16" fill="#f3f4f6" stroke="#374151" rx="2"/>
+  <text x="54" y="508" font-size="8" fill="#374151" font-weight="bold" text-anchor="middle">GND</text>
+
+  <rect x="30" y="519" width="48" height="16" fill="#fef9c3" stroke="#ca8a04" rx="2"/>
+  <text x="54" y="530" font-size="8" fill="#92400e" font-weight="bold" text-anchor="middle">SIG (YEL)</text>
+
+  <text x="135" y="486" font-size="7.5" fill="#dc2626">→ 5V Rail</text>
+  <text x="135" y="508" font-size="7.5" fill="#374151">→ GND Rail</text>
+  <text x="135" y="530" font-size="7.5" fill="#92400e">→ Divider → GPIO26</text>
+  <text x="110" y="550" font-size="7.5" fill="#6b7280" text-anchor="middle">Wire: Red / Black / Yellow</text>
+</g>
+
+<!-- Outlet voltage divider -->
+<g id="div-out">
+  <rect x="235" y="485" width="145" height="76" fill="#fefce8" stroke="#eab308" stroke-width="1.5" rx="4"/>
+  <text x="307" y="498" font-size="8" fill="#713f12" text-anchor="middle" font-weight="bold">VOLTAGE DIVIDER (3.3V clamp)</text>
+  <rect x="248" y="506" width="50" height="16" fill="#fff7ed" stroke="#ea580c" rx="2"/>
+  <text x="273" y="517" font-size="9" fill="#ea580c" text-anchor="middle">R1 = 1kΩ</text>
+  <rect x="318" y="506" width="50" height="16" fill="#fff7ed" stroke="#ea580c" rx="2"/>
+  <text x="343" y="517" font-size="9" fill="#ea580c" text-anchor="middle">R2 = 2kΩ</text>
+  <text x="307" y="538" font-size="7.5" fill="#92400e" text-anchor="middle">SIG → R1 → node → GPIO26</text>
+  <text x="307" y="550" font-size="7.5" fill="#92400e" text-anchor="middle">node → R2 → GND</text>
+  <text x="307" y="562" font-size="7" fill="#6b7280" text-anchor="middle">5V → 3.33V (safe for ESP32)</text>
+</g>
+
+<!-- Outlet sensor wires -->
+<polyline points="78,475 78,458 350,458 350,109"
+  stroke="#dc2626" stroke-width="1.8" fill="none" marker-end="url(#arr-red)"/>
+<polyline points="54,513 54,468 510,468 510,133"
+  stroke="#1f2937" stroke-width="1.8" fill="none" marker-end="url(#arr-blk)"/>
+<line x1="78" y1="527" x2="235" y2="527" stroke="#d97706" stroke-width="1.8"/>
+<polyline points="380,513 490,513 490,501 870,501"
+  stroke="#d97706" stroke-width="1.8" fill="none" marker-end="url(#arr-ylw)"/>
+<text x="555" y="498" font-size="7.5" fill="#d97706" font-weight="bold">GPIO26</text>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ADS1115 (I2C ADC for pressure sensor)                  -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<g id="ads1115" filter="url(#shadow)">
+  <rect x="910" y="200" width="200" height="230" fill="#eff6ff" stroke="#3b82f6" stroke-width="2" rx="6"/>
+  <rect x="910" y="200" width="200" height="22" fill="#2563eb" rx="6"/>
+  <rect x="910" y="210" width="200" height="12" fill="#2563eb"/>
+  <text x="1010" y="215" font-size="10" fill="white" font-weight="bold" text-anchor="middle">ADS1115</text>
+  <text x="1010" y="234" font-size="8" fill="#1d4ed8" text-anchor="middle">16-bit I²C ADC · 0x48</text>
+  <text x="1010" y="246" font-size="7.5" fill="#6b7280" text-anchor="middle">PGA ±4.096V · LSB = 0.125mV</text>
+
+  <!-- VDD pin -->
+  <rect x="920" y="255" width="55" height="16" fill="#fce7f3" stroke="#db2777" rx="2"/>
+  <text x="947" y="266" font-size="8" fill="#9d174d" text-anchor="middle" font-weight="bold">VDD</text>
+  <text x="985" y="266" font-size="8" fill="#be185d">← 3.3V from ESP32</text>
+
+  <!-- GND pin -->
+  <rect x="920" y="277" width="55" height="16" fill="#e5e7eb" stroke="#6b7280" rx="2"/>
+  <text x="947" y="288" font-size="8" fill="#374151" text-anchor="middle" font-weight="bold">GND</text>
+  <text x="985" y="288" font-size="8" fill="#6b7280">← GND Bus</text>
+
+  <!-- SCL pin -->
+  <rect x="920" y="299" width="55" height="16" fill="#bbf7d0" stroke="#16a34a" rx="2"/>
+  <text x="947" y="310" font-size="8" fill="#14532d" text-anchor="middle" font-weight="bold">SCL</text>
+  <text x="985" y="310" font-size="8" fill="#15803d" font-weight="bold">← GPIO22 (I²C SCL)</text>
+
+  <!-- SDA pin -->
+  <rect x="920" y="321" width="55" height="16" fill="#bbf7d0" stroke="#16a34a" rx="2"/>
+  <text x="947" y="332" font-size="8" fill="#14532d" text-anchor="middle" font-weight="bold">SDA</text>
+  <text x="985" y="332" font-size="8" fill="#15803d" font-weight="bold">← GPIO21 (I²C SDA)</text>
+
+  <!-- ADDR pin -->
+  <rect x="920" y="343" width="55" height="16" fill="#e0f2fe" stroke="#0284c7" rx="2"/>
+  <text x="947" y="354" font-size="8" fill="#0369a1" text-anchor="middle" font-weight="bold">ADDR</text>
+  <text x="985" y="354" font-size="8" fill="#0284c7">→ GND (addr = 0x48)</text>
+
+  <!-- A0 pin -->
+  <rect x="920" y="365" width="55" height="16" fill="#fef9c3" stroke="#ca8a04" rx="2"/>
+  <text x="947" y="376" font-size="8" fill="#713f12" text-anchor="middle" font-weight="bold">A0</text>
+  <text x="985" y="376" font-size="8" fill="#92400e">← Pressure divider out</text>
+
+  <!-- ALERT pin -->
+  <rect x="920" y="387" width="55" height="16" fill="#f3f4f6" stroke="#9ca3af" rx="2"/>
+  <text x="947" y="398" font-size="8" fill="#6b7280" text-anchor="middle">ALRT</text>
+  <text x="985" y="398" font-size="8" fill="#9ca3af">Not used</text>
+
+  <text x="1010" y="420" font-size="7.5" fill="#6b7280" text-anchor="middle">ADDR pin options:</text>
+  <text x="1010" y="432" font-size="7.5" fill="#6b7280" text-anchor="middle">GND=0x48  VCC=0x49</text>
+  <text x="1010" y="444" font-size="7.5" fill="#6b7280" text-anchor="middle">SDA=0x4A  SCL=0x4B</text>
+</g>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PRESSURE TRANSDUCER (0–30 PSI, 0.5–4.5V ratiometric)  -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<g id="pressure" filter="url(#shadow)">
+  <rect x="910" y="460" width="200" height="150" fill="#fff7ed" stroke="#ea580c" stroke-width="2" rx="6"/>
+  <rect x="910" y="460" width="200" height="22" fill="#ea580c" rx="6"/>
+  <rect x="910" y="470" width="200" height="12" fill="#ea580c"/>
+  <text x="1010" y="475" font-size="10" fill="white" font-weight="bold" text-anchor="middle">PRESSURE TRANSDUCER</text>
+  <text x="1010" y="494" font-size="8" fill="#9a3412" text-anchor="middle">0–30 PSI · 5V Ratiometric</text>
+  <text x="1010" y="506" font-size="7.5" fill="#6b7280" text-anchor="middle">Output: 0.5V (0 PSI) → 4.5V (30 PSI)</text>
+
+  <rect x="920" y="515" width="50" height="16" fill="#fee2e2" stroke="#dc2626" rx="2"/>
+  <text x="945" y="526" font-size="8" fill="#dc2626" text-anchor="middle" font-weight="bold">VCC</text>
+  <text x="980" y="526" font-size="8" fill="#dc2626">← 5V Rail</text>
+
+  <rect x="920" y="537" width="50" height="16" fill="#e5e7eb" stroke="#374151" rx="2"/>
+  <text x="945" y="548" font-size="8" fill="#374151" text-anchor="middle" font-weight="bold">GND</text>
+  <text x="980" y="548" font-size="8" fill="#6b7280">← GND Rail</text>
+
+  <rect x="920" y="559" width="50" height="16" fill="#fef9c3" stroke="#ca8a04" rx="2"/>
+  <text x="945" y="570" font-size="8" fill="#92400e" text-anchor="middle" font-weight="bold">SIG</text>
+  <text x="980" y="570" font-size="8" fill="#92400e">→ Voltage Divider</text>
+
+  <text x="1010" y="596" font-size="7.5" fill="#6b7280" text-anchor="middle">3-wire: Red/Black/Yellow</text>
+</g>
+
+<!-- Pressure voltage divider -->
+<g id="div-press">
+  <rect x="910" y="635" width="200" height="90" fill="#fefce8" stroke="#eab308" stroke-width="1.5" rx="4"/>
+  <text x="1010" y="650" font-size="8.5" fill="#713f12" text-anchor="middle" font-weight="bold">PRESSURE VOLTAGE DIVIDER</text>
+  <text x="1010" y="664" font-size="7.5" fill="#92400e" text-anchor="middle">Scales 4.5V → 3.06V (ADS1115 safe)</text>
+
+  <rect x="925" y="672" width="55" height="16" fill="#fff7ed" stroke="#ea580c" rx="2"/>
+  <text x="952" y="683" font-size="9" fill="#ea580c" text-anchor="middle">R1 = 4.7kΩ</text>
+
+  <rect x="1030" y="672" width="55" height="16" fill="#fff7ed" stroke="#ea580c" rx="2"/>
+  <text x="1057" y="683" font-size="9" fill="#ea580c" text-anchor="middle">R2 = 10kΩ</text>
+
+  <text x="1010" y="700" font-size="7.5" fill="#92400e" text-anchor="middle">SIG→R1→node→ADS A0  |  node→R2→GND</text>
+  <text x="1010" y="712" font-size="7" fill="#6b7280" text-anchor="middle">Ratio: 10k/(4.7k+10k) = 0.680</text>
+</g>
+
+<!-- Pressure transducer wires -->
+<polyline points="945,515 945,490 1130,490 1130,109"
+  stroke="#dc2626" stroke-width="1.8" fill="none" marker-end="url(#arr-red)"/>
+<polyline points="970,537 970,468 1150,468 1150,133"
+  stroke="#1f2937" stroke-width="1.8" fill="none" marker-end="url(#arr-blk)"/>
+<!-- Signal: transducer → voltage divider -->
+<line x1="945" y1="575" x2="945" y2="672" stroke="#d97706" stroke-width="1.8"/>
+<!-- Voltage divider → ADS1115 A0 -->
+<polyline points="985,680 985,655 1010,655 1010,381 975,381"
+  stroke="#d97706" stroke-width="1.8" fill="none" marker-end="url(#arr-ylw)"/>
+
+<!-- Pressure divider R2 to GND -->
+<polyline points="1057,688 1057,726 1150,726 1150,133"
+  stroke="#1f2937" stroke-width="1.5" fill="none" stroke-dasharray="4,2"/>
+
+<!-- ADDR → GND -->
+<polyline points="975,351 1070,351 1070,726 1150,726"
+  stroke="#1f2937" stroke-width="1.5" fill="none" stroke-dasharray="4,2"/>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ADS1115 → ESP32 I²C wires                              -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SCL: ADS1115 → GPIO22 -->
+<polyline points="910,307 890,307 890,333 870,333"
+  stroke="#16a34a" stroke-width="2" fill="none" marker-end="url(#arr-grn)"/>
+<!-- SDA: ADS1115 → GPIO21 -->
+<polyline points="910,329 880,329 880,417 870,417"
+  stroke="#2563eb" stroke-width="2" fill="none" marker-end="url(#arr-blu)"/>
+
+<!-- ADS1115 3.3V from ESP32 -->
+<polyline points="910,263 870,263 870,248 840,248" stroke="#db2777" stroke-width="2" fill="none" stroke-dasharray="5,2"/>
+<!-- Actually 3V3 is on left side at y=725, need to connect -->
+<!-- Let's connect ADS VDD to 3V3 via a different route -->
+<polyline points="580,725 540,725 540,263 910,263"
+  stroke="#db2777" stroke-width="1.8" fill="none" marker-end="url(#arr-orn)"/>
+<text x="540" y="500" font-size="7.5" fill="#be185d" transform="rotate(90,540,500)">3.3V → ADS1115 VDD</text>
+
+<!-- ADS1115 GND -->
+<polyline points="945,285 945,270 1060,270 1060,133"
+  stroke="#1f2937" stroke-width="1.8" fill="none" marker-end="url(#arr-blk)"/>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- LCD 20×4 WITH PCF8574T BACKPACK                        -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<g id="lcd" filter="url(#shadow)">
+  <rect x="910" y="760" width="200" height="195" fill="#f0fdf4" stroke="#059669" stroke-width="2" rx="6"/>
+  <rect x="910" y="760" width="200" height="22" fill="#059669" rx="6"/>
+  <rect x="910" y="770" width="200" height="12" fill="#059669"/>
+  <text x="1010" y="775" font-size="10" fill="white" font-weight="bold" text-anchor="middle">LCD 20×4 + PCF8574T</text>
+  <text x="1010" y="794" font-size="8" fill="#065f46" text-anchor="middle">HD44780 · I²C Backpack</text>
+  <text x="1010" y="806" font-size="7.5" fill="#6b7280" text-anchor="middle">Addr: 0x27 (A0/A1/A2 = open)</text>
+  <text x="1010" y="818" font-size="7.5" fill="#6b7280" text-anchor="middle">Alt:  0x3F (A0/A1/A2 bridged)</text>
+
+  <!-- VCC -->
+  <rect x="920" y="827" width="50" height="16" fill="#fee2e2" stroke="#dc2626" rx="2"/>
+  <text x="945" y="838" font-size="8" fill="#dc2626" text-anchor="middle" font-weight="bold">VCC</text>
+  <text x="980" y="838" font-size="8" fill="#dc2626">← 5V Rail</text>
+
+  <!-- GND -->
+  <rect x="920" y="849" width="50" height="16" fill="#e5e7eb" stroke="#374151" rx="2"/>
+  <text x="945" y="860" font-size="8" fill="#374151" text-anchor="middle" font-weight="bold">GND</text>
+  <text x="980" y="860" font-size="8" fill="#6b7280">← GND Rail</text>
+
+  <!-- SCL -->
+  <rect x="920" y="871" width="50" height="16" fill="#bbf7d0" stroke="#16a34a" rx="2"/>
+  <text x="945" y="882" font-size="8" fill="#14532d" text-anchor="middle" font-weight="bold">SCL</text>
+  <text x="980" y="882" font-size="8" fill="#15803d" font-weight="bold">← GPIO22</text>
+
+  <!-- SDA -->
+  <rect x="920" y="893" width="50" height="16" fill="#bbf7d0" stroke="#16a34a" rx="2"/>
+  <text x="945" y="904" font-size="8" fill="#14532d" text-anchor="middle" font-weight="bold">SDA</text>
+  <text x="980" y="904" font-size="8" fill="#15803d" font-weight="bold">← GPIO21</text>
+
+  <!-- Backlight note -->
+  <rect x="920" y="916" width="180" height="30" fill="#ecfdf5" stroke="#86efac" rx="3"/>
+  <text x="1010" y="929" font-size="7.5" fill="#065f46" text-anchor="middle">Blue trimmer pot on backpack:</text>
+  <text x="1010" y="940" font-size="7.5" fill="#065f46" text-anchor="middle">Turn CW to increase contrast</text>
+</g>
+
+<!-- LCD wires -->
+<!-- VCC from 5V rail -->
+<polyline points="945,827 945,820 1180,820 1180,109"
+  stroke="#dc2626" stroke-width="1.8" fill="none" marker-end="url(#arr-red)"/>
+<!-- GND to GND rail -->
+<polyline points="970,849 970,840 1190,840 1190,133"
+  stroke="#1f2937" stroke-width="1.8" fill="none" marker-end="url(#arr-blk)"/>
+<!-- SCL: GPIO22 → I2C bus → LCD -->
+<!-- LCD SCL -->
+<polyline points="910,879 898,879 898,307 910,307" stroke="#16a34a" stroke-width="2" fill="none"/>
+<circle cx="898" cy="307" r="4" fill="#16a34a"/>
+<text x="899" y="595" font-size="7.5" fill="#16a34a" transform="rotate(90,899,595)">I²C SCL bus (GPIO22)</text>
+<!-- LCD SDA -->
+<polyline points="910,901 886,901 886,329 910,329" stroke="#2563eb" stroke-width="2" fill="none"/>
+<circle cx="886" cy="329" r="4" fill="#2563eb"/>
+<text x="887" y="615" font-size="7.5" fill="#2563eb" transform="rotate(90,887,615)">I²C SDA bus (GPIO21)</text>
+
+<!-- I2C bus labels at ESP32 side -->
+<text x="880" y="330" font-size="8" fill="#15803d" text-anchor="end">SCL</text>
+<text x="880" y="420" font-size="8" fill="#2563eb" text-anchor="end">SDA</text>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- I2C BUS ANNOTATION                                      -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<rect x="1120" y="295" width="125" height="70" fill="#f0fdf4" stroke="#059669" stroke-width="1" rx="4" stroke-dasharray="3,2"/>
+<text x="1182" y="310" font-size="8" fill="#065f46" text-anchor="middle" font-weight="bold">I²C SHARED BUS</text>
+<text x="1182" y="323" font-size="7.5" fill="#6b7280" text-anchor="middle">SDA = GPIO21</text>
+<text x="1182" y="335" font-size="7.5" fill="#6b7280" text-anchor="middle">SCL = GPIO22</text>
+<text x="1182" y="347" font-size="7.5" fill="#6b7280" text-anchor="middle">Speed: 50 kHz</text>
+<text x="1182" y="359" font-size="7.5" fill="#6b7280" text-anchor="middle">Pull-ups: Internal 4.7kΩ</text>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- LEGEND                                                  -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<g id="legend">
+  <rect x="20" y="610" width="200" height="235" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5" rx="6"/>
+  <rect x="20" y="610" width="200" height="20" fill="#334155" rx="6"/>
+  <rect x="20" y="620" width="200" height="10" fill="#334155"/>
+  <text x="120" y="624" font-size="9" fill="white" font-weight="bold" text-anchor="middle" letter-spacing="1.5">WIRE COLOUR CODE</text>
+
+  <!-- Red wire -->
+  <line x1="35" y1="648" x2="75" y2="648" stroke="#dc2626" stroke-width="3"/>
+  <circle cx="55" cy="648" r="4" fill="#dc2626"/>
+  <text x="82" y="652" font-size="9" fill="#374151">Red — 5V Power</text>
+
+  <!-- Black wire -->
+  <line x1="35" y1="666" x2="75" y2="666" stroke="#1f2937" stroke-width="3"/>
+  <circle cx="55" cy="666" r="4" fill="#1f2937"/>
+  <text x="82" y="670" font-size="9" fill="#374151">Black — GND</text>
+
+  <!-- Pink/orange wire (3.3V) -->
+  <line x1="35" y1="684" x2="75" y2="684" stroke="#db2777" stroke-width="3"/>
+  <circle cx="55" cy="684" r="4" fill="#db2777"/>
+  <text x="82" y="688" font-size="9" fill="#374151">Pink — 3.3V Power</text>
+
+  <!-- Yellow wire -->
+  <line x1="35" y1="702" x2="75" y2="702" stroke="#d97706" stroke-width="3"/>
+  <circle cx="55" cy="702" r="4" fill="#d97706"/>
+  <text x="82" y="706" font-size="9" fill="#374151">Yellow — Signal</text>
+
+  <!-- Blue wire -->
+  <line x1="35" y1="720" x2="75" y2="720" stroke="#2563eb" stroke-width="3"/>
+  <circle cx="55" cy="720" r="4" fill="#2563eb"/>
+  <text x="82" y="724" font-size="9" fill="#374151">Blue — I²C SDA</text>
+
+  <!-- Green wire -->
+  <line x1="35" y1="738" x2="75" y2="738" stroke="#16a34a" stroke-width="3"/>
+  <circle cx="55" cy="738" r="4" fill="#16a34a"/>
+  <text x="82" y="742" font-size="9" fill="#374151">Green — I²C SCL</text>
+
+  <!-- Dashed = bus rail -->
+  <line x1="35" y1="756" x2="75" y2="756" stroke="#dc2626" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="82" y="760" font-size="9" fill="#374151">Dashed — Power bus</text>
+
+  <!-- Dot-dash = indirect/logic -->
+  <line x1="35" y1="774" x2="75" y2="774" stroke="#1f2937" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="82" y="778" font-size="9" fill="#374151">Dot-dash — Tie to GND</text>
+
+  <!-- Filled circle = junction -->
+  <circle cx="55" cy="792" r="5" fill="#374151"/>
+  <text x="82" y="796" font-size="9" fill="#374151">● = Junction / shared node</text>
+
+  <!-- Warning -->
+  <rect x="28" y="804" width="184" height="30" fill="#fee2e2" stroke="#dc2626" stroke-width="1" rx="3"/>
+  <text x="120" y="817" font-size="8" fill="#dc2626" text-anchor="middle" font-weight="bold">⚡ MAINS VOLTAGE DANGER</text>
+  <text x="120" y="829" font-size="7.5" fill="#dc2626" text-anchor="middle">Use insulated HLK housing!</text>
+</g>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- NOTES BOX                                              -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<g id="notes">
+  <rect x="240" y="610" width="320" height="310" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5" rx="6"/>
+  <rect x="240" y="610" width="320" height="20" fill="#334155" rx="6"/>
+  <rect x="240" y="620" width="320" height="10" fill="#334155"/>
+  <text x="400" y="624" font-size="9" fill="white" font-weight="bold" text-anchor="middle" letter-spacing="1.5">ASSEMBLY NOTES</text>
+
+  <text x="255" y="647" font-size="8.5" fill="#374151" font-weight="bold">POWER SUPPLY</text>
+  <text x="255" y="661" font-size="8" fill="#4b5563">• HLK-PM01: mount in insulated plastic enclosure</text>
+  <text x="255" y="673" font-size="8" fill="#4b5563">• Use 2-core mains cable for L/N inputs (rated ≥1A)</text>
+  <text x="255" y="685" font-size="8" fill="#4b5563">• Add inline fuse (500mA) on Live wire</text>
+  <text x="255" y="697" font-size="8" fill="#4b5563">• Solder all HLK terminals; do not use breadboard</text>
+
+  <text x="255" y="715" font-size="8.5" fill="#374151" font-weight="bold">FLOW SENSORS (YF-S201)</text>
+  <text x="255" y="729" font-size="8" fill="#4b5563">• Build voltage divider on perfboard near ESP32</text>
+  <text x="255" y="741" font-size="8" fill="#4b5563">• R1=1kΩ in series with signal wire (yellow)</text>
+  <text x="255" y="753" font-size="8" fill="#4b5563">• R2=2kΩ from node to GND (clamps 5V → 3.33V)</text>
+  <text x="255" y="765" font-size="8" fill="#4b5563">• Inlet → GPIO25, Outlet → GPIO26</text>
+
+  <text x="255" y="783" font-size="8.5" fill="#374151" font-weight="bold">PRESSURE TRANSDUCER + ADS1115</text>
+  <text x="255" y="797" font-size="8" fill="#4b5563">• ADS1115 VDD → 3.3V (ESP32 3V3 pin, max 10mA)</text>
+  <text x="255" y="809" font-size="8" fill="#4b5563">• ADDR pin → GND directly (short wire)</text>
+  <text x="255" y="821" font-size="8" fill="#4b5563">• R1=4.7kΩ series, R2=10kΩ to GND (divider ratio 0.68)</text>
+  <text x="255" y="833" font-size="8" fill="#4b5563">• Max input to ADS1115: ±4.096V (PGA setting)</text>
+
+  <text x="255" y="851" font-size="8.5" fill="#374151" font-weight="bold">LCD (PCF8574T BACKPACK)</text>
+  <text x="255" y="865" font-size="8" fill="#4b5563">• Default addr 0x27 (A0/A1/A2 pads open)</text>
+  <text x="255" y="877" font-size="8" fill="#4b5563">• Second LCD: bridge all 3 pads → addr 0x3F</text>
+  <text x="255" y="889" font-size="8" fill="#4b5563">• SDA/SCL shared with ADS1115 on same bus</text>
+  <text x="255" y="901" font-size="8" fill="#4b5563">• Adjust blue contrast trimmer CW until text appears</text>
+
+  <text x="255" y="919" font-size="8.5" fill="#374151" font-weight="bold">FLASHING ESP32</text>
+  <text x="400" y="919" font-size="8" fill="#4b5563"> Hold BOOT btn while uploading if hardware connected</text>
+</g>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PIN QUICK-REFERENCE TABLE                              -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<g id="pintable">
+  <rect x="590" y="960" width="460" height="95" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5" rx="6"/>
+  <rect x="590" y="960" width="460" height="18" fill="#1e3a5f" rx="6"/>
+  <rect x="590" y="969" width="460" height="9" fill="#1e3a5f"/>
+  <text x="820" y="973" font-size="9" fill="white" font-weight="bold" text-anchor="middle" letter-spacing="1.5">ESP32 PIN QUICK REFERENCE</text>
+
+  <!-- Table header -->
+  <rect x="590" y="978" width="460" height="16" fill="#334155"/>
+  <text x="640" y="989" font-size="8" fill="#93c5fd" font-weight="bold" text-anchor="middle">GPIO</text>
+  <text x="730" y="989" font-size="8" fill="#93c5fd" font-weight="bold" text-anchor="middle">Function</text>
+  <text x="860" y="989" font-size="8" fill="#93c5fd" font-weight="bold" text-anchor="middle">Connected To</text>
+  <text x="980" y="989" font-size="8" fill="#93c5fd" font-weight="bold" text-anchor="middle">Note</text>
+  <line x1="590" y1="994" x2="1050" y2="994" stroke="#4b6f9f" stroke-width="0.5"/>
+
+  <!-- Rows -->
+  <text x="640" y="1007" font-size="8" fill="#374151" text-anchor="middle">GPIO21</text>
+  <text x="730" y="1007" font-size="8" fill="#374151" text-anchor="middle">I²C SDA</text>
+  <text x="860" y="1007" font-size="8" fill="#374151" text-anchor="middle">ADS1115 SDA + LCD SDA</text>
+  <text x="980" y="1007" font-size="8" fill="#6b7280" text-anchor="middle">Shared bus</text>
+  <line x1="590" y1="1011" x2="1050" y2="1011" stroke="#e5e7eb" stroke-width="0.5"/>
+
+  <text x="640" y="1021" font-size="8" fill="#374151" text-anchor="middle">GPIO22</text>
+  <text x="730" y="1021" font-size="8" fill="#374151" text-anchor="middle">I²C SCL</text>
+  <text x="860" y="1021" font-size="8" fill="#374151" text-anchor="middle">ADS1115 SCL + LCD SCL</text>
+  <text x="980" y="1021" font-size="8" fill="#6b7280" text-anchor="middle">Shared bus · 50kHz</text>
+  <line x1="590" y1="1025" x2="1050" y2="1025" stroke="#e5e7eb" stroke-width="0.5"/>
+
+  <text x="640" y="1035" font-size="8" fill="#374151" text-anchor="middle">GPIO25</text>
+  <text x="730" y="1035" font-size="8" fill="#374151" text-anchor="middle">FLOW IN</text>
+  <text x="860" y="1035" font-size="8" fill="#374151" text-anchor="middle">YF-S201 Inlet (via 1k/2k divider)</text>
+  <text x="980" y="1035" font-size="8" fill="#6b7280" text-anchor="middle">Rising edge ISR</text>
+  <line x1="590" y1="1039" x2="1050" y2="1039" stroke="#e5e7eb" stroke-width="0.5"/>
+
+  <text x="640" y="1049" font-size="8" fill="#374151" text-anchor="middle">GPIO26</text>
+  <text x="730" y="1049" font-size="8" fill="#374151" text-anchor="middle">FLOW OUT</text>
+  <text x="860" y="1049" font-size="8" fill="#374151" text-anchor="middle">YF-S201 Outlet (via 1k/2k divider)</text>
+  <text x="980" y="1049" font-size="8" fill="#6b7280" text-anchor="middle">Rising edge ISR</text>
+  <line x1="590" y1="1053" x2="1050" y2="1053" stroke="#e5e7eb" stroke-width="0.5"/>
+
+  <text x="640" y="1057" font-size="8" fill="#374151" text-anchor="middle">VIN</text>
+  <text x="730" y="1057" font-size="8" fill="#374151" text-anchor="middle">5V Input</text>
+  <text x="860" y="1057" font-size="8" fill="#374151" text-anchor="middle">HLK-PM01 +Vo</text>
+  <text x="980" y="1057" font-size="8" fill="#6b7280" text-anchor="middle">Onboard 3.3V reg</text>
+</g>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- COMPONENT SUMMARY (right side)                         -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<g id="summary">
+  <rect x="1125" y="745" width="200" height="300" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5" rx="6"/>
+  <rect x="1125" y="745" width="200" height="20" fill="#334155" rx="6"/>
+  <rect x="1125" y="755" width="200" height="10" fill="#334155"/>
+  <text x="1225" y="759" font-size="9" fill="white" font-weight="bold" text-anchor="middle" letter-spacing="1">COMPONENT LIST</text>
+
+  <text x="1135" y="780" font-size="8.5" fill="#374151" font-weight="bold">1× HLK-PM01</text>
+  <text x="1135" y="792" font-size="8" fill="#6b7280">  220V AC → 5V DC 600mA</text>
+
+  <text x="1135" y="808" font-size="8.5" fill="#374151" font-weight="bold">1× ESP32 DevKit V1</text>
+  <text x="1135" y="820" font-size="8" fill="#6b7280">  Dual-core Xtensa LX6 240MHz</text>
+  <text x="1135" y="832" font-size="8" fill="#6b7280">  WiFi + BLE</text>
+
+  <text x="1135" y="848" font-size="8.5" fill="#374151" font-weight="bold">2× YF-S201</text>
+  <text x="1135" y="860" font-size="8" fill="#6b7280">  Hall-effect flow sensor</text>
+  <text x="1135" y="872" font-size="8" fill="#6b7280">  5V · 0.3–6 L/min</text>
+
+  <text x="1135" y="888" font-size="8.5" fill="#374151" font-weight="bold">1× ADS1115</text>
+  <text x="1135" y="900" font-size="8" fill="#6b7280">  16-bit I²C ADC · addr 0x48</text>
+  <text x="1135" y="912" font-size="8" fill="#6b7280">  PGA ±4.096V</text>
+
+  <text x="1135" y="928" font-size="8.5" fill="#374151" font-weight="bold">1× Pressure Transducer</text>
+  <text x="1135" y="940" font-size="8" fill="#6b7280">  0–30 PSI · 5V ratiometric</text>
+  <text x="1135" y="952" font-size="8" fill="#6b7280">  0.5V–4.5V output</text>
+
+  <text x="1135" y="968" font-size="8.5" fill="#374151" font-weight="bold">1× LCD 20×4 + PCF8574T</text>
+  <text x="1135" y="980" font-size="8" fill="#6b7280">  I²C backpack · addr 0x27</text>
+
+  <text x="1135" y="996" font-size="8.5" fill="#374151" font-weight="bold">Resistors</text>
+  <text x="1135" y="1008" font-size="8" fill="#6b7280">  2× 1kΩ · 2× 2kΩ (flow dividers)</text>
+  <text x="1135" y="1020" font-size="8" fill="#6b7280">  1× 4.7kΩ · 1× 10kΩ (press. divider)</text>
+
+  <text x="1135" y="1036" font-size="8.5" fill="#374151" font-weight="bold">Misc</text>
+  <text x="1135" y="1048" font-size="8" fill="#6b7280">  1× inline fuse 500mA (Live wire)</text>
+  <text x="1135" y="1060" font-size="8" fill="#6b7280">  Insulated enclosure for HLK</text>
+</g>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION LABELS                                          -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<rect x="20" y="220" width="130" height="16" fill="#92400e" rx="3"/>
+<text x="85" y="231" font-size="8.5" fill="white" font-weight="bold" text-anchor="middle" letter-spacing="1">FLOW SENSORS</text>
+
+<rect x="900" y="190" width="130" height="16" fill="#1d4ed8" rx="3"/>
+<text x="965" y="201" font-size="8.5" fill="white" font-weight="bold" text-anchor="middle" letter-spacing="1">ADC + PRESSURE</text>
+
+<rect x="900" y="750" width="130" height="16" fill="#059669" rx="3"/>
+<text x="965" y="761" font-size="8.5" fill="white" font-weight="bold" text-anchor="middle" letter-spacing="1">DISPLAY (LCD)</text>
+
+<rect x="570" y="163" width="170" height="16" fill="#15803d" rx="3"/>
+<text x="655" y="174" font-size="8.5" fill="white" font-weight="bold" text-anchor="middle" letter-spacing="1">MICROCONTROLLER</text>
+
+</svg>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flowsense Monitor</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;
+       display:flex;flex-direction:column;align-items:center;padding:2rem}
+  h1{font-size:1.6rem;margin-bottom:.5rem;color:#38bdf8;letter-spacing:.05em}
+  .subtitle{font-size:.8rem;color:#475569;margin-bottom:1.5rem}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+        gap:1rem;width:100%;max-width:900px}
+  .card{background:#1e293b;border-radius:12px;padding:1.25rem;text-align:center;
+        border:1px solid #334155;transition:border-color .3s}
+  .card.updated{border-color:#38bdf8}
+  .card .label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;
+               color:#94a3b8;margin-bottom:.5rem}
+  .card .value{font-size:2rem;font-weight:700;color:#f1f5f9;font-variant-numeric:tabular-nums}
+  .card .unit{font-size:.78rem;color:#64748b;margin-top:.25rem}
+  .status-bar{margin-top:1.5rem;display:flex;align-items:center;gap:.6rem;
+              font-size:.75rem;color:#475569}
+  .dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0;
+       animation:pulse 2s infinite}
+  .dot.offline{background:#ef4444;animation:none}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+  /* Chart section */
+  .chart-section{margin-top:2rem;width:100%;max-width:900px}
+  .chart-title{font-size:.85rem;color:#94a3b8;text-transform:uppercase;
+               letter-spacing:.08em;margin-bottom:.75rem}
+  canvas{background:#1e293b;border-radius:12px;border:1px solid #334155;
+         width:100%!important;height:220px!important}
+</style>
+</head>
+<body>
+
+<h1>Flowsense Live Monitor</h1>
+<p class="subtitle">Real-time water flow &amp; pressure</p>
+
+<div class="grid">
+  <div class="card" id="c-fin">
+    <div class="label">Inlet Flow Rate</div>
+    <div class="value" id="flow_in_m3h">--</div>
+    <div class="unit">m&#179;&nbsp;/&nbsp;h</div>
+  </div>
+  <div class="card" id="c-fout">
+    <div class="label">Outlet Flow Rate</div>
+    <div class="value" id="flow_out_m3h">--</div>
+    <div class="unit">m&#179;&nbsp;/&nbsp;h</div>
+  </div>
+  <div class="card" id="c-vin">
+    <div class="label">Inlet Volume</div>
+    <div class="value" id="volume_in_m3">--</div>
+    <div class="unit">m&#179;</div>
+  </div>
+  <div class="card" id="c-vout">
+    <div class="label">Outlet Volume</div>
+    <div class="value" id="volume_out_m3">--</div>
+    <div class="unit">m&#179;</div>
+  </div>
+  <div class="card" id="c-psi">
+    <div class="label">Line Pressure</div>
+    <div class="value" id="pressure_psi">--</div>
+    <div class="unit">PSI</div>
+  </div>
+</div>
+
+<div class="status-bar">
+  <span class="dot" id="dot"></span>
+  <span id="status-text">Connecting...</span>
+</div>
+
+<!-- Flow rate history chart -->
+<div class="chart-section">
+  <div class="chart-title">Flow Rate History</div>
+  <canvas id="chart"></canvas>
+</div>
+
+<script>
+// ── Tiny chart (no library) ───────────────────────────────────────────────────
+const HISTORY = 60;   // keep last 60 data points
+const tseries = { fin: [], fout: [], psi: [] };
+
+function addPoint(d) {
+    tseries.fin.push(d.flow_in_m3h);
+    tseries.fout.push(d.flow_out_m3h);
+    tseries.psi.push(d.pressure_psi);
+    for (const k of Object.keys(tseries)) {
+        if (tseries[k].length > HISTORY) tseries[k].shift();
+    }
+    drawChart();
+}
+
+function drawChart() {
+    const canvas = document.getElementById('chart');
+    const ctx    = canvas.getContext('2d');
+    canvas.width  = canvas.offsetWidth;
+    canvas.height = 220;
+    const W = canvas.width, H = canvas.height;
+    const pad = { top: 16, right: 16, bottom: 24, left: 44 };
+    const iW  = W - pad.left - pad.right;
+    const iH  = H - pad.top  - pad.bottom;
+
+    ctx.clearRect(0, 0, W, H);
+
+    const allVals = [...tseries.fin, ...tseries.fout];
+    const maxV    = Math.max(...allVals, 0.001);
+
+    function drawSeries(data, color) {
+        if (data.length < 2) return;
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth   = 2;
+        data.forEach((v, i) => {
+            const x = pad.left + (i / (HISTORY - 1)) * iW;
+            const y = pad.top  + iH - (v / maxV) * iH;
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+    }
+
+    // Grid lines
+    ctx.strokeStyle = '#1e3a5f';
+    ctx.lineWidth   = 1;
+    for (let i = 0; i <= 4; i++) {
+        const y = pad.top + (i / 4) * iH;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(W - pad.right, y);
+        ctx.stroke();
+        ctx.fillStyle   = '#475569';
+        ctx.font        = '10px sans-serif';
+        ctx.textAlign   = 'right';
+        ctx.fillText((maxV * (1 - i / 4)).toFixed(3), pad.left - 4, y + 4);
+    }
+
+    drawSeries(tseries.fin,  '#38bdf8');   // blue = inlet
+    drawSeries(tseries.fout, '#4ade80');   // green = outlet
+
+    // Legend
+    ctx.font      = '11px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#38bdf8'; ctx.fillRect(pad.left, H - 14, 10, 10);
+    ctx.fillStyle = '#e2e8f0'; ctx.fillText('Inlet', pad.left + 14, H - 5);
+    ctx.fillStyle = '#4ade80'; ctx.fillRect(pad.left + 60, H - 14, 10, 10);
+    ctx.fillStyle = '#e2e8f0'; ctx.fillText('Outlet', pad.left + 74, H - 5);
+}
+
+// ── Card flash on update ──────────────────────────────────────────────────────
+const cardMap = {
+    flow_in_m3h:  'c-fin',
+    flow_out_m3h: 'c-fout',
+    volume_in_m3: 'c-vin',
+    volume_out_m3:'c-vout',
+    pressure_psi: 'c-psi',
+};
+
+function applyData(d) {
+    document.getElementById('flow_in_m3h').textContent  = d.flow_in_m3h.toFixed(4);
+    document.getElementById('flow_out_m3h').textContent = d.flow_out_m3h.toFixed(4);
+    document.getElementById('volume_in_m3').textContent = d.volume_in_m3.toFixed(4);
+    document.getElementById('volume_out_m3').textContent= d.volume_out_m3.toFixed(4);
+    document.getElementById('pressure_psi').textContent = d.pressure_psi.toFixed(2);
+
+    for (const [field, cardId] of Object.entries(cardMap)) {
+        const card = document.getElementById(cardId);
+        card.classList.add('updated');
+        setTimeout(() => card.classList.remove('updated'), 600);
+    }
+
+    addPoint(d);
+
+    const dot    = document.getElementById('dot');
+    const status = document.getElementById('status-text');
+    dot.classList.remove('offline');
+    status.textContent = 'Live — last update: ' + new Date(d.timestamp).toLocaleTimeString();
+}
+
+// ── Server-Sent Events connection ─────────────────────────────────────────────
+function connect() {
+    const es = new EventSource('/api/stream');
+
+    es.onmessage = (e) => {
+        try { applyData(JSON.parse(e.data)); } catch {}
+    };
+
+    es.onerror = () => {
+        document.getElementById('dot').classList.add('offline');
+        document.getElementById('status-text').textContent = 'Disconnected — reconnecting...';
+        es.close();
+        setTimeout(connect, 3000);   // auto-reconnect
+    };
+}
+
+connect();
+window.addEventListener('resize', drawChart);
+</script>
+</body>
+</html>
