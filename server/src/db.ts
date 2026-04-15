@@ -56,37 +56,46 @@ async function migrate(): Promise<void> {
 //   Peak flow is in m³/min (field name says m3h but ESP sends L/min × 0.001)
 //   Outlet ≈ 94 % of inlet (drinking water, evaporation loss)
 
+// Outlet ≈ 97 % of inlet — models YF-S201 sensor-to-sensor measurement tolerance
+// on a healthy pipe with no leaks. The ~3 % gap is normal for two Hall-effect
+// sensors on the same flow line (rated ±3–5 % accuracy each).
 const SEED_ROWS = [
   // date          vol_in   vol_out  readings  peak_psi  peak_fin  peak_fout
-  ["2026-04-01",   0.825,   0.779,   40200,    16.8,     0.0072,   0.0068],  // Holy Wed
-  ["2026-04-02",   0.868,   0.820,   41500,    17.1,     0.0075,   0.0071],  // Maundy Thu
-  ["2026-04-03",   0.558,   0.527,   38900,    15.4,     0.0054,   0.0051],  // Good Fri (quiet)
-  ["2026-04-04",   0.632,   0.597,   39800,    16.0,     0.0061,   0.0058],  // Black Sat
-  ["2026-04-05",   0.957,   0.904,   42100,    17.5,     0.0083,   0.0079],  // Easter Sun (guests)
-  ["2026-04-06",   0.671,   0.634,   40300,    16.5,     0.0066,   0.0063],  // Mon
-  ["2026-04-07",   0.658,   0.621,   39900,    15.8,     0.0064,   0.0061],  // Tue
-  ["2026-04-08",   0.681,   0.643,   40700,    16.2,     0.0067,   0.0063],  // Wed
-  ["2026-04-09",   0.703,   0.663,   41200,    16.7,     0.0070,   0.0066],  // Thu
-  ["2026-04-10",   0.690,   0.652,   40500,    16.4,     0.0068,   0.0064],  // Fri
-  ["2026-04-11",   0.914,   0.863,   42800,    17.8,     0.0081,   0.0076],  // Sat (laundry)
-  ["2026-04-12",   0.849,   0.802,   41900,    17.2,     0.0075,   0.0071],  // Sun
-  ["2026-04-13",   0.661,   0.624,   39600,    15.9,     0.0063,   0.0060],  // Mon
-  ["2026-04-14",   0.675,   0.638,   40100,    16.1,     0.0065,   0.0062],  // Tue
+  ["2026-04-01",   0.825,   0.800,   40200,    16.8,     0.0072,   0.0070],  // Holy Wed
+  ["2026-04-02",   0.868,   0.842,   41500,    17.1,     0.0075,   0.0073],  // Maundy Thu
+  ["2026-04-03",   0.558,   0.541,   38900,    15.4,     0.0054,   0.0052],  // Good Fri (quiet)
+  ["2026-04-04",   0.632,   0.613,   39800,    16.0,     0.0061,   0.0059],  // Black Sat
+  ["2026-04-05",   0.957,   0.928,   42100,    17.5,     0.0083,   0.0081],  // Easter Sun (guests)
+  ["2026-04-06",   0.671,   0.651,   40300,    16.5,     0.0066,   0.0064],  // Mon
+  ["2026-04-07",   0.658,   0.638,   39900,    15.8,     0.0064,   0.0062],  // Tue
+  ["2026-04-08",   0.681,   0.661,   40700,    16.2,     0.0067,   0.0065],  // Wed
+  ["2026-04-09",   0.703,   0.682,   41200,    16.7,     0.0070,   0.0068],  // Thu
+  ["2026-04-10",   0.690,   0.669,   40500,    16.4,     0.0068,   0.0066],  // Fri
+  ["2026-04-11",   0.914,   0.887,   42800,    17.8,     0.0081,   0.0079],  // Sat (laundry)
+  ["2026-04-12",   0.849,   0.823,   41900,    17.2,     0.0075,   0.0073],  // Sun
+  ["2026-04-13",   0.661,   0.641,   39600,    15.9,     0.0063,   0.0061],  // Mon
+  ["2026-04-14",   0.675,   0.655,   40100,    16.1,     0.0065,   0.0063],  // Tue
 ] as const;
 
 async function seed(): Promise<void> {
-  // Only seed if the table is completely empty
   const [rows] = await pool.execute<RowDataPacket[]>(
-    "SELECT COUNT(*) AS cnt FROM daily_summaries",
+    "SELECT COUNT(*) AS cnt, COALESCE(MAX(CASE WHEN `date`='2026-04-01' THEN volume_out_m3 END), -1) AS apr1_out FROM daily_summaries",
   );
-  const count = Number(rows[0].cnt);
+  const count      = Number(rows[0].cnt);
+  const apr1Out    = Number(rows[0].apr1_out);
+  const isOldSeed  = Math.abs(apr1Out - 0.779) < 0.001; // old wrong 94% value
 
-  if (count > 0) {
-    console.log(`[DB] daily_summaries has ${count} rows — skipping seed`);
+  if (count > 0 && !isOldSeed) {
+    console.log(`[DB] daily_summaries has ${count} rows and is up to date — skipping seed`);
     return;
   }
 
-  console.log(`[DB] Seeding ${SEED_ROWS.length} days of demo data…`);
+  if (isOldSeed) {
+    console.log("[DB] Old seed data detected (94% outlet) — clearing and reseeding with corrected values…");
+    await pool.execute("DELETE FROM daily_summaries");
+  } else {
+    console.log(`[DB] Seeding ${SEED_ROWS.length} days of demo data…`);
+  }
 
   for (const [date, vol_in, vol_out, readings, peak_psi, peak_fin, peak_fout] of SEED_ROWS) {
     await pool.execute(

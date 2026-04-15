@@ -352,7 +352,7 @@ app.delete("/api/bills/:id", async (req: Request, res: Response) => {
 // ── POST /api/seed — bulk-load daily summaries (for test data) ────────────────
 
 app.post("/api/seed", async (req: Request, res: Response) => {
-  const { days } = req.body as { days: DailySummary[] };
+  const { days, clear } = req.body as { days: DailySummary[]; clear?: boolean };
 
   if (!Array.isArray(days) || days.length === 0) {
     res.status(400).json({ error: "days must be a non-empty array" });
@@ -360,6 +360,11 @@ app.post("/api/seed", async (req: Request, res: Response) => {
   }
 
   try {
+    if (clear) {
+      await pool.execute("DELETE FROM daily_summaries");
+      console.log("[SEED] Cleared daily_summaries");
+    }
+
     for (const d of days) {
       await pool.execute(
         `INSERT INTO daily_summaries
