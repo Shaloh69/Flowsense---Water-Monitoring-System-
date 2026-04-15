@@ -10,7 +10,7 @@ export const pool = mysql.createPool({
   user:     process.env.MYSQL_USER     ?? "root",
   password: process.env.MYSQL_PASSWORD ?? "",
   database: process.env.MYSQL_DATABASE ?? "flowsense",
-  ssl:      process.env.MYSQL_SSL === "false" ? undefined : { rejectUnauthorized: true },
+  ssl:      process.env.MYSQL_SSL === "false" ? undefined : { rejectUnauthorized: false },
   connectionLimit: 5,
   waitForConnections: true,
   queueLimit: 0,
