@@ -17,32 +17,52 @@ const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3000"
 // ── Icons ─────────────────────────────────────────────────────────────────────
 const IconDropIn = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-      d="M19 14a7 7 0 11-14 0c0-4.418 5-10 7-10s7 5.582 7 10z" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M19 14a7 7 0 11-14 0c0-4.418 5-10 7-10s7 5.582 7 10z"
+    />
   </svg>
 );
 const IconDropOut = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-      d="M19 14a7 7 0 11-14 0c0-4.418 5-10 7-10s7 5.582 7 10zM12 12v4m0 0l-2-2m2 2l2-2" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M19 14a7 7 0 11-14 0c0-4.418 5-10 7-10s7 5.582 7 10zM12 12v4m0 0l-2-2m2 2l2-2"
+    />
   </svg>
 );
 const IconVolume = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-      d="M4 7h16M4 12h16M4 17h10" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M4 7h16M4 12h16M4 17h10"
+    />
   </svg>
 );
 const IconPressure = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707"
+    />
   </svg>
 );
 const IconActivity = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+    />
   </svg>
 );
 
@@ -85,7 +105,9 @@ function PressureGauge({ psi, max = 30 }: { psi: number; max?: number }) {
         {zones.map((z) => (
           <div key={z.label} className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full inline-block" style={{ background: z.color }} />
-            <span className="text-[9px] text-blue-200/30">{z.label} ({z.range})</span>
+            <span className="text-[9px] text-blue-200/30">
+              {z.label} ({z.range})
+            </span>
           </div>
         ))}
       </div>
@@ -128,7 +150,13 @@ export default function Dashboard() {
   const vinH = history.map((r) => r.volume_in_m3);
   const voutH = history.map((r) => r.volume_out_m3);
   const psiH = history.map((r) => r.pressure_psi);
-  const timeLabels = history.map((r) => new Date(r.timestamp).toLocaleTimeString("en", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+  const timeLabels = history.map((r) =>
+    new Date(r.timestamp).toLocaleTimeString("en", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }),
+  );
 
   const fmt4 = (v?: number) => (v !== undefined ? v.toFixed(4) : "--");
   const fmt2 = (v?: number) => (v !== undefined ? v.toFixed(2) : "--");
@@ -146,7 +174,6 @@ export default function Dashboard() {
         </div>
       ) : (
         <div className="flex flex-col gap-8">
-
           {/* ── Row 1: 5 KPI metric cards ──────────────────────────────────── */}
           <section>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-blue-300/40 mb-3">
@@ -236,18 +263,39 @@ export default function Dashboard() {
             <div className="glass-card p-5 flex flex-col justify-between gap-4">
               <div className="flex items-center gap-2 text-blue-300/50">
                 <IconActivity />
-                <p className="text-[10px] font-semibold uppercase tracking-widest">Session Summary</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest">
+                  Session Summary
+                </p>
               </div>
 
               <div className="flex flex-col gap-3 flex-1">
                 {[
                   { label: "Readings", val: String(history.length), color: "text-blue-100" },
-                  { label: "Peak Flow IN", val: `${Math.max(...finH, 0).toFixed(4)} m³/h`, color: "text-blue-300" },
-                  { label: "Peak Flow OUT", val: `${Math.max(...foutH, 0).toFixed(4)} m³/h`, color: "text-emerald-300" },
-                  { label: "Peak Pressure", val: `${Math.max(...psiH, 0).toFixed(2)} PSI`, color: "text-orange-300" },
-                  { label: "Max Volume IN", val: `${Math.max(...vinH, 0).toFixed(4)} m³`, color: "text-purple-300" },
+                  {
+                    label: "Peak Flow IN",
+                    val: `${Math.max(...finH, 0).toFixed(4)} m³/h`,
+                    color: "text-blue-300",
+                  },
+                  {
+                    label: "Peak Flow OUT",
+                    val: `${Math.max(...foutH, 0).toFixed(4)} m³/h`,
+                    color: "text-emerald-300",
+                  },
+                  {
+                    label: "Peak Pressure",
+                    val: `${Math.max(...psiH, 0).toFixed(2)} PSI`,
+                    color: "text-orange-300",
+                  },
+                  {
+                    label: "Max Volume IN",
+                    val: `${Math.max(...vinH, 0).toFixed(4)} m³`,
+                    color: "text-purple-300",
+                  },
                 ].map((s) => (
-                  <div key={s.label} className="flex justify-between items-center border-b border-blue-900/20 pb-2 last:border-0 last:pb-0">
+                  <div
+                    key={s.label}
+                    className="flex justify-between items-center border-b border-blue-900/20 pb-2 last:border-0 last:pb-0"
+                  >
                     <span className="text-xs text-blue-200/40">{s.label}</span>
                     <span className={`text-xs font-mono font-semibold ${s.color}`}>{s.val}</span>
                   </div>
@@ -309,10 +357,20 @@ export default function Dashboard() {
                 <Chip
                   size="sm"
                   variant="flat"
-                  color={latest.pressure_psi > 25 ? "danger" : latest.pressure_psi > 18 ? "warning" : "default"}
+                  color={
+                    latest.pressure_psi > 25
+                      ? "danger"
+                      : latest.pressure_psi > 18
+                        ? "warning"
+                        : "default"
+                  }
                   className="text-[10px]"
                 >
-                  {latest.pressure_psi > 25 ? "⚠ High" : latest.pressure_psi > 18 ? "Elevated" : "Normal"}
+                  {latest.pressure_psi > 25
+                    ? "⚠ High"
+                    : latest.pressure_psi > 18
+                      ? "Elevated"
+                      : "Normal"}
                 </Chip>
               </div>
               <LineChart

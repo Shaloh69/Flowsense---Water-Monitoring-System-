@@ -25,20 +25,32 @@ interface DailySummary {
 // ── Icons ─────────────────────────────────────────────────────────────────────
 const IconCalendar = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+    />
   </svg>
 );
 const IconDrop = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-      d="M19 14a7 7 0 11-14 0c0-4.418 5-10 7-10s7 5.582 7 10z" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M19 14a7 7 0 11-14 0c0-4.418 5-10 7-10s7 5.582 7 10z"
+    />
   </svg>
 );
 const IconPeso = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-      d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+    />
   </svg>
 );
 
@@ -66,7 +78,9 @@ function SummaryCard({
     <div className="glass-card p-4 flex flex-col gap-2">
       <div className={`flex items-center gap-2 ${colorMap[color]}`}>
         {icon}
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-blue-200/50">{label}</span>
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-blue-200/50">
+          {label}
+        </span>
       </div>
       <p className="text-2xl font-bold font-mono text-white leading-none">{value}</p>
       {sub && <p className="text-xs text-blue-200/40">{sub}</p>}
@@ -141,7 +155,9 @@ export default function ReportsPage() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white">Usage Reports</h1>
-            <p className="text-sm text-blue-200/50 mt-1">Daily water consumption breakdown with cost estimation</p>
+            <p className="text-sm text-blue-200/50 mt-1">
+              Daily water consumption breakdown with cost estimation
+            </p>
           </div>
 
           {/* Price input */}
@@ -250,12 +266,7 @@ export default function ReportsPage() {
               <p className="text-[10px] font-semibold uppercase tracking-widest text-blue-300/50 mb-4">
                 Daily Volume ({tab === "weekly" ? "Last 7 Days" : "Last 30 Days"})
               </p>
-              <BarChart
-                series={barSeries}
-                xLabels={xLabels}
-                height={220}
-                unit="m³"
-              />
+              <BarChart series={barSeries} xLabels={xLabels} height={220} unit="m³" />
             </div>
 
             <Divider className="bg-blue-900/30" />
@@ -271,8 +282,19 @@ export default function ReportsPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-blue-900/20">
-                      {["Date", "Inlet (m³)", "Outlet (m³)", "Peak IN (m³/h)", "Peak OUT (m³/h)", "Peak PSI", "Est. Cost"].map((h) => (
-                        <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-blue-200/50 bg-blue-900/20">
+                      {[
+                        "Date",
+                        "Inlet (m³)",
+                        "Outlet (m³)",
+                        "Peak IN (m³/h)",
+                        "Peak OUT (m³/h)",
+                        "Peak PSI",
+                        "Est. Cost",
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-blue-200/50 bg-blue-900/20"
+                        >
                           {h}
                         </th>
                       ))}
@@ -292,12 +314,24 @@ export default function ReportsPage() {
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-2.5 font-mono text-blue-300 text-xs">{fmt3(row.volume_in_m3)}</td>
-                        <td className="px-4 py-2.5 font-mono text-emerald-300 text-xs">{fmt3(row.volume_out_m3)}</td>
-                        <td className="px-4 py-2.5 font-mono text-blue-200/60 text-xs">{row.peak_flow_in_m3h.toFixed(4)}</td>
-                        <td className="px-4 py-2.5 font-mono text-blue-200/60 text-xs">{row.peak_flow_out_m3h.toFixed(4)}</td>
-                        <td className="px-4 py-2.5 font-mono text-orange-300/80 text-xs">{row.peak_pressure_psi.toFixed(2)}</td>
-                        <td className="px-4 py-2.5 font-mono text-yellow-300/80 text-xs">{fmtPeso(row.volume_in_m3 * price)}</td>
+                        <td className="px-4 py-2.5 font-mono text-blue-300 text-xs">
+                          {fmt3(row.volume_in_m3)}
+                        </td>
+                        <td className="px-4 py-2.5 font-mono text-emerald-300 text-xs">
+                          {fmt3(row.volume_out_m3)}
+                        </td>
+                        <td className="px-4 py-2.5 font-mono text-blue-200/60 text-xs">
+                          {row.peak_flow_in_m3h.toFixed(4)}
+                        </td>
+                        <td className="px-4 py-2.5 font-mono text-blue-200/60 text-xs">
+                          {row.peak_flow_out_m3h.toFixed(4)}
+                        </td>
+                        <td className="px-4 py-2.5 font-mono text-orange-300/80 text-xs">
+                          {row.peak_pressure_psi.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-2.5 font-mono text-yellow-300/80 text-xs">
+                          {fmtPeso(row.volume_in_m3 * price)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

@@ -4,7 +4,8 @@
       "Bash(sed -i 's/CONFIG_ESP_BROWNOUT_DET=y/CONFIG_ESP_BROWNOUT_DET=n/' \"D:/Projects-Shem/Thesis/2026/Flowshish/flow_a/sdkconfig.esp32dev\")",
       "Bash(sed -i 's/CONFIG_ESP_BROWNOUT_DET_LVL_SEL_0=y/# CONFIG_ESP_BROWNOUT_DET_LVL_SEL_0 is not set/' \"D:/Projects-Shem/Thesis/2026/Flowshish/flow_a/sdkconfig.esp32dev\")",
       "Bash(sed -i 's/CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE=y/CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE=n/' \"D:/Projects-Shem/Thesis/2026/Flowshish/flow_a/sdkconfig.esp32dev\")",
-      "Bash(sed -i 's/CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE=y/CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE=n/' \"D:/Projects-Shem/Thesis/2026/Flowshish/flow_a/sdkconfig.esp32dev\")"
+      "Bash(sed -i 's/CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE=y/CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE=n/' \"D:/Projects-Shem/Thesis/2026/Flowshish/flow_a/sdkconfig.esp32dev\")",
+      "Bash(npx next *)"
     ]
   }
 }
