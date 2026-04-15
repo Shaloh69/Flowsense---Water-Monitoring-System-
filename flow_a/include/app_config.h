@@ -53,3 +53,6 @@
 // ── Task Periods ──────────────────────────────────────────────────────────────
 #define FLOW_TASK_PERIOD_MS     250
 #define PRESSURE_TASK_PERIOD_MS 500
+
+// ── WiFi ──────────────────────────────────────────────────────────────────────
+#define WIFI_RECONNECT_MS       10000   // how often task_wifi_manager checks connection

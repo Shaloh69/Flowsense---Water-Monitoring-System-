@@ -1,35 +1,5 @@
-# Brownout detector — DISABLED (HLK-PM01 / USB power cannot supply WiFi peak)
-CONFIG_ESP_BROWNOUT_DET=n
-
-# Reduce WiFi TX power to lower peak current during phy_init (default 20 dBm → 10 dBm)
-# This directly reduces the current spike that causes RTCWDT_RTC_RESET on weak USB power
-CONFIG_ESP32_PHY_MAX_WIFI_TX_POWER=10
-
-# RF calibration — DISABLE NVS storage to break the crash-before-save boot loop.
-# When enabled + crashing during phy_init, calibration data never saves → every
-# boot re-runs full calibration → crashes again → infinite loop.
-# With this off, full calibration runs every boot (adds ~200ms) but no NVS dependency.
-CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE=n
-CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE=n
-
 # Float support in snprintf — nano formatting breaks %f
 CONFIG_NEWLIB_NANO_FORMATTING=n
 
 # Flash size
 CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
-
-# Reduce CPU clock to 80 MHz — halves digital-core current during phy_init
-# WiFi minimum is 80 MHz; lower values are not supported with WiFi enabled
-CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ=80
-
-# Give the bootloader WDT 30 s — prevents it from expiring right as phy_init fires
-# Default is 9 000 ms which can be tight on marginal power supplies
-CONFIG_BOOTLOADER_WDT_TIME_MS=30000
-
-# Reduce WiFi buffer pool — lowers peak heap allocation burst during esp_wifi_init
-# Default: 10 static / 32 dynamic; reduced to ease power spike during init
-CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM=4
-CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM=8
-
-# Disable Bluetooth — not used; frees ~30 KB IRAM and removes BT init overhead
-CONFIG_BT_ENABLED=n

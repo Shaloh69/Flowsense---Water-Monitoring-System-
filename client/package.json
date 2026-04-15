@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "node .next/standalone/server.js",
+    "build": "next build && cp -r .next/static .next/standalone/.next/static",
+    "start": "HOSTNAME=0.0.0.0 node .next/standalone/server.js",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
     "prettier": "prettier --write .",

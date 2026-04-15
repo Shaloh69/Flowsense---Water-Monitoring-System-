@@ -35,7 +35,7 @@ static void poster_task(void *arg)
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(POST_INTERVAL_MS));
 
-        if (!wifi_manager_is_sta_connected()) continue;
+        if (!wifi_is_connected()) continue;
 
         // Build JSON body
         char body[256];

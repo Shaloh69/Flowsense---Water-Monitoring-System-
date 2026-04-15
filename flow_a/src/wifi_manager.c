@@ -16,27 +16,32 @@
 
 static const char *TAG = "WIFI";
 
+// ── NVS keys ──────────────────────────────────────────────────────────────────
 #define NVS_NAMESPACE   "flowsense"
 #define NVS_KEY_SSID    "wifi_ssid"
 #define NVS_KEY_PASS    "wifi_pass"
 
-#define MAX_STA_RETRIES  10
-#define STA_CONNECTED_BIT BIT0
+// ── Event group bits ──────────────────────────────────────────────────────────
+#define WIFI_CONNECTED_BIT  BIT0
+#define WIFI_FAIL_BIT       BIT1
 
+#define MAX_RETRIES  5
+
+// ── State ─────────────────────────────────────────────────────────────────────
 static EventGroupHandle_t s_wifi_eg;
-static volatile bool      s_sta_connected = false;
-static int                s_retry_count   = 0;
-static bool               s_provisioning  = false;
-static bool               s_ap_services_started = false;
+static volatile bool      s_connected   = false;
+static int                s_retry_count = 0;
+static bool               s_started     = false;   // true once esp_wifi_start() has been called
+static char               s_ip[16]      = {0};
 
 // ── NVS helpers ───────────────────────────────────────────────────────────────
 
-static bool nvs_read_str(const char *key, char *out, size_t out_len)
+static bool nvs_read_str(const char *key, char *out, size_t len)
 {
     nvs_handle_t h;
     if (nvs_open(NVS_NAMESPACE, NVS_READONLY, &h) != ESP_OK) return false;
-    size_t len = out_len;
-    bool ok = (nvs_get_str(h, key, out, &len) == ESP_OK);
+    size_t l = len;
+    bool ok = (nvs_get_str(h, key, out, &l) == ESP_OK);
     nvs_close(h);
     return ok;
 }
@@ -52,37 +57,12 @@ static esp_err_t nvs_write_str(const char *key, const char *val)
     return err;
 }
 
-static bool has_credentials(void)
-{
-    char ssid[64] = {0};
-    return nvs_read_str(NVS_KEY_SSID, ssid, sizeof(ssid)) && ssid[0] != '\0';
-}
-
-// ── Reboot task (deferred so HTTP response can be sent first) ─────────────────
+// ── Reboot task (deferred so HTTP response is sent first) ─────────────────────
 
 static void reboot_task(void *arg)
 {
     vTaskDelay(pdMS_TO_TICKS(1500));
     esp_restart();
-}
-
-// ── AP config helper ──────────────────────────────────────────────────────────
-
-static void configure_ap(void)
-{
-    wifi_config_t ap_cfg = {
-        .ap = {
-            .ssid_len        = sizeof(AP_SSID) - 1,
-            .channel         = AP_CHANNEL,
-            .max_connection  = AP_MAX_CONN,
-            .authmode        = WIFI_AUTH_WPA2_PSK,
-            .beacon_interval = 100,
-            .pmf_cfg         = { .capable = false, .required = false },
-        },
-    };
-    memcpy(ap_cfg.ap.ssid,     AP_SSID,     sizeof(AP_SSID));
-    memcpy(ap_cfg.ap.password, AP_PASSWORD, sizeof(AP_PASSWORD));
-    esp_wifi_set_config(WIFI_IF_AP, &ap_cfg);
 }
 
 // ── Event handler ─────────────────────────────────────────────────────────────
@@ -93,27 +73,35 @@ static void wifi_event_handler(void *arg, esp_event_base_t base,
     if (base == WIFI_EVENT) {
         switch (id) {
 
-        case WIFI_EVENT_AP_START: {
-            if (s_ap_services_started) break;  // guard against duplicate AP_START
-            s_ap_services_started = true;
+        case WIFI_EVENT_STA_START:
+            // STA stack is up — issue the first connect attempt
+            esp_wifi_connect();
+            break;
 
-            // Set DHCP Option 114 (captive portal URI)
-            esp_netif_t *ap_netif = esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
-            if (ap_netif) {
-                const char *uri = "http://" AP_IP "/";
-                esp_netif_dhcps_stop(ap_netif);
-                esp_netif_dhcps_option(ap_netif, ESP_NETIF_OP_SET,
-                                       ESP_NETIF_CAPTIVEPORTAL_URI,
-                                       (void *)uri, strlen(uri));
-                esp_netif_dhcps_start(ap_netif);
+        case WIFI_EVENT_STA_CONNECTED:
+            ESP_LOGI(TAG, "STA connected — waiting for IP...");
+            s_retry_count = 0;
+            break;
+
+        case WIFI_EVENT_STA_DISCONNECTED:
+            s_connected = false;
+            if (s_retry_count < MAX_RETRIES) {
+                s_retry_count++;
+                ESP_LOGW(TAG, "Disconnected — retry %d/%d", s_retry_count, MAX_RETRIES);
+                esp_wifi_connect();
+            } else {
+                xEventGroupSetBits(s_wifi_eg, WIFI_FAIL_BIT);
+                ESP_LOGE(TAG, "Max retries reached");
             }
+            break;
+
+        case WIFI_EVENT_AP_START:
+            // AP is up — start captive portal services
             dns_server_start();
             web_server_start();
-            ESP_LOGI(TAG, "AP started — SSID:\"%s\"  PW:\"%s\"  IP:" AP_IP
-                     "  mode:%s", AP_SSID, AP_PASSWORD,
-                     s_provisioning ? "PROVISIONING" : "NORMAL");
+            ESP_LOGI(TAG, "Provisioning AP started — SSID:\"%s\"  portal: http://" AP_IP "/",
+                     AP_SSID);
             break;
-        }
 
         case WIFI_EVENT_AP_STACONNECTED:
             ESP_LOGI(TAG, "Client connected to hotspot");
@@ -123,44 +111,24 @@ static void wifi_event_handler(void *arg, esp_event_base_t base,
             ESP_LOGI(TAG, "Client disconnected from hotspot");
             break;
 
-        case WIFI_EVENT_STA_START:
-            esp_wifi_connect();
+        default:
             break;
-
-        case WIFI_EVENT_STA_CONNECTED:
-            ESP_LOGI(TAG, "STA connected to router — waiting for IP...");
-            s_retry_count = 0;
-            break;
-
-        case WIFI_EVENT_STA_DISCONNECTED: {
-            s_sta_connected = false;
-            if (s_retry_count < MAX_STA_RETRIES) {
-                s_retry_count++;
-                ESP_LOGW(TAG, "STA disconnected, retry %d/%d",
-                         s_retry_count, MAX_STA_RETRIES);
-                vTaskDelay(pdMS_TO_TICKS(2000));
-                esp_wifi_connect();
-            } else {
-                ESP_LOGE(TAG, "STA: max retries reached — check credentials");
-            }
-            break;
-        }
-
-        default: break;
         }
 
     } else if (base == IP_EVENT && id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t *evt = (ip_event_got_ip_t *)data;
-        ESP_LOGI(TAG, "STA got IP: " IPSTR " — internet available",
-                 IP2STR(&evt->ip_info.ip));
-        s_sta_connected = true;
-        s_retry_count   = 0;
+        snprintf(s_ip, sizeof(s_ip), IPSTR, IP2STR(&evt->ip_info.ip));
+        s_connected   = true;
+        s_retry_count = 0;
+        xEventGroupSetBits(s_wifi_eg, WIFI_CONNECTED_BIT);
+        ESP_LOGI(TAG, "Got IP: %s", s_ip);
     }
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-bool wifi_manager_is_sta_connected(void) { return s_sta_connected; }
+bool        wifi_is_connected(void) { return s_connected; }
+const char *wifi_get_ip(void)       { return s_ip; }
 
 esp_err_t wifi_manager_save_and_restart(const char *ssid, const char *pass)
 {
@@ -173,61 +141,113 @@ esp_err_t wifi_manager_save_and_restart(const char *ssid, const char *pass)
     return ESP_OK;
 }
 
-esp_err_t wifi_manager_init(void)
+// ── wifi_init — allocates WiFi stack, does NOT start RF ───────────────────────
+// Mirrors BlueWatt's wifi_init() exactly.
+// phy_init has NOT run after this returns — it fires inside wifi_connect().
+
+esp_err_t wifi_init(void)
 {
     s_wifi_eg = xEventGroupCreate();
 
-    esp_netif_init();
-    esp_event_loop_create_default();
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    // Create AP netif always
+    // Pre-create both netifs — STA used by wifi_connect(), AP used by wifi_start_provisioning_mode()
+    esp_netif_create_default_wifi_sta();
     esp_netif_create_default_wifi_ap();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    esp_wifi_init(&cfg);
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-    esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID,
-                                        wifi_event_handler, NULL, NULL);
-    esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP,
-                                        wifi_event_handler, NULL, NULL);
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID,
+                                                        wifi_event_handler, NULL, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP,
+                                                        wifi_event_handler, NULL, NULL));
 
-    // ── APSTA mode always — use NVS credentials or fall back to defaults ─────
-    {
-        char ssid[64] = {0};
-        char pass[64] = {0};
+    ESP_LOGI(TAG, "WiFi stack allocated — RF not yet started (phy_init pending)");
+    return ESP_OK;
+}
 
-        if (has_credentials()) {
-            nvs_read_str(NVS_KEY_SSID, ssid, sizeof(ssid));
-            nvs_read_str(NVS_KEY_PASS, pass, sizeof(pass));
-            ESP_LOGI(TAG, "Using saved credentials — SSID: \"%s\"", ssid);
-        } else {
-            strlcpy(ssid, DEFAULT_WIFI_SSID, sizeof(ssid));
-            strlcpy(pass, DEFAULT_WIFI_PASS, sizeof(pass));
-            ESP_LOGI(TAG, "No saved credentials — using default SSID: \"%s\"", ssid);
-        }
+// ── wifi_connect — starts RF in STA-only mode ─────────────────────────────────
+// Call from a FreeRTOS task (never from app_main).
+// On first call: esp_wifi_start() fires phy_init.
+// On subsequent calls (reconnect): reuses the running stack.
 
-        esp_netif_create_default_wifi_sta();
-        esp_wifi_set_mode(WIFI_MODE_APSTA);
+esp_err_t wifi_connect(void)
+{
+    char ssid[64] = {0};
+    char pass[64] = {0};
 
-        configure_ap();
-
-        wifi_config_t sta_cfg = {0};
-        strlcpy((char *)sta_cfg.sta.ssid,     ssid, sizeof(sta_cfg.sta.ssid));
-        strlcpy((char *)sta_cfg.sta.password, pass, sizeof(sta_cfg.sta.password));
-        esp_wifi_set_config(WIFI_IF_STA, &sta_cfg);
-
-        s_provisioning = false;
-        ESP_LOGI(TAG, "APSTA mode — connecting to \"%s\"", ssid);
+    if (nvs_read_str(NVS_KEY_SSID, ssid, sizeof(ssid)) && ssid[0] != '\0') {
+        nvs_read_str(NVS_KEY_PASS, pass, sizeof(pass));
+        ESP_LOGI(TAG, "Using saved credentials — SSID: \"%s\"", ssid);
+    } else {
+        strlcpy(ssid, DEFAULT_WIFI_SSID, sizeof(ssid));
+        strlcpy(pass, DEFAULT_WIFI_PASS,  sizeof(pass));
+        ESP_LOGI(TAG, "No saved credentials — using default SSID: \"%s\"", ssid);
     }
 
-    // Use RAM storage — prevents WiFi driver from accessing flash during operation
-    // which competes with I2C on the same APB bus and corrupts LCD writes
-    esp_wifi_set_storage(WIFI_STORAGE_RAM);
+    // Clear stale bits before waiting
+    xEventGroupClearBits(s_wifi_eg, WIFI_CONNECTED_BIT | WIFI_FAIL_BIT);
+    s_retry_count = 0;
 
-    esp_wifi_start();
-    esp_wifi_set_max_tx_power(40);   // 10 dBm — reduces peak current draw on startup
-    esp_wifi_set_ps(WIFI_PS_NONE);
-    esp_wifi_set_bandwidth(WIFI_IF_AP, WIFI_BW_HT20);
+    wifi_config_t sta_cfg = {0};
+    strlcpy((char *)sta_cfg.sta.ssid,     ssid, sizeof(sta_cfg.sta.ssid));
+    strlcpy((char *)sta_cfg.sta.password, pass, sizeof(sta_cfg.sta.password));
 
-    return ESP_OK;
+    if (s_started) {
+        // Stack already running — update config and reconnect
+        ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_cfg));
+        esp_wifi_connect();
+    } else {
+        // First call — this is where phy_init fires
+        ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+        ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_cfg));
+        ESP_ERROR_CHECK(esp_wifi_start());   // ← phy_init happens here, from task context
+        esp_wifi_set_ps(WIFI_PS_NONE);       // disable modem sleep for stable link
+        s_started = true;
+        // WIFI_EVENT_STA_START fires and calls esp_wifi_connect() automatically
+    }
+
+    // Wait up to 15 s for connection or failure
+    EventBits_t bits = xEventGroupWaitBits(s_wifi_eg,
+                                           WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
+                                           pdFALSE, pdFALSE,
+                                           pdMS_TO_TICKS(15000));
+
+    if (bits & WIFI_CONNECTED_BIT) return ESP_OK;
+    if (bits & WIFI_FAIL_BIT)      return ESP_FAIL;
+
+    ESP_LOGW(TAG, "Connection timeout after 15 s");
+    return ESP_ERR_TIMEOUT;
+}
+
+// ── wifi_start_provisioning_mode — AP-only fallback ───────────────────────────
+// Stops STA (if running), starts AP-only mode.
+// WIFI_EVENT_AP_START fires and starts dns_server + web_server automatically.
+
+void wifi_start_provisioning_mode(void)
+{
+    ESP_LOGI(TAG, "Starting provisioning AP: \"%s\"", AP_SSID);
+
+    wifi_config_t ap_cfg = {
+        .ap = {
+            .ssid_len       = sizeof(AP_SSID) - 1,
+            .channel        = AP_CHANNEL,
+            .max_connection = AP_MAX_CONN,
+            .authmode       = WIFI_AUTH_WPA2_PSK,
+        },
+    };
+    memcpy(ap_cfg.ap.ssid,     AP_SSID,     sizeof(AP_SSID));
+    memcpy(ap_cfg.ap.password, AP_PASSWORD, sizeof(AP_PASSWORD));
+
+    if (s_started) {
+        esp_wifi_stop();
+        s_started = false;
+    }
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_cfg));
+    ESP_ERROR_CHECK(esp_wifi_start());
+    s_started = true;
 }
