@@ -3,3 +3,21 @@ CONFIG_NEWLIB_NANO_FORMATTING=n
 
 # Flash size
 CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+
+# ── Power survival settings ───────────────────────────────────────────────────
+# These are SOFTWARE MITIGATIONS only. The root cause is hardware:
+# HLK-PM01 → AMS1117-3.3 cannot source the ~400 mA phy_init calibration spike.
+# The voltage drops below 2.43 V (BOD threshold) and below 2.7 V (CPU minimum).
+# PERMANENT FIX: add a 470 µF capacitor between the ESP32 3V3 pin and GND.
+
+# Disable brownout detector — prevents BOD from resetting before phy_init completes.
+# Without this: rst:0x3 (SW_RESET) triggered by BOD at ~2.43 V.
+CONFIG_ESP_BROWNOUT_DET=n
+
+# Reduce WiFi TX power 20 dBm → 10 dBm — cuts peak RF current draw by ~50%.
+CONFIG_ESP32_PHY_MAX_WIFI_TX_POWER=10
+
+# Disable PHY calibration NVS storage — full calibration runs every boot (~200 ms extra)
+# but avoids the crash-before-save loop where no data is ever written.
+CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE=n
+CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE=n

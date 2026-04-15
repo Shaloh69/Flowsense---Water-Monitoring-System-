@@ -14,6 +14,7 @@ interface Props {
 const NAV_LINKS = [
   { href: "/", label: "Dashboard" },
   { href: "/reports", label: "Reports" },
+  { href: "/bills", label: "Bills" },
 ];
 
 export default function Layout({ title = "Flowsense Monitor", description = "Real-time water flow & pressure monitoring", children }: Props) {
