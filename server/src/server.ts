@@ -43,6 +43,21 @@ interface Bill {
 app.use(cors());
 app.use(express.json());
 
+// Request logger — logs every incoming HTTP request with method, path, status, time
+app.use((req, res, next) => {
+  const start = Date.now();
+  const { method, path: p, ip } = req;
+  res.on("finish", () => {
+    const ms   = Date.now() - start;
+    const code = res.statusCode;
+    const tag  = code >= 400 ? "[ERR]" : "[REQ]";
+    // Skip noisy SSE keep-alive pings after connection is established
+    if (p === "/api/stream" && code === 200) return;
+    console.log(`${tag} ${method} ${p} → ${code}  (${ms} ms)  from ${ip}`);
+  });
+  next();
+});
+
 // ── In-memory store — last 500 live readings for dashboard + SSE ──────────────
 // Daily summaries and bills are persisted in MySQL.
 
@@ -413,7 +428,16 @@ async function main() {
     process.exit(1);
   }
   app.listen(PORT, () => {
-    console.log(`Flowsense server running on port ${PORT}`);
+    console.log("─────────────────────────────────────────");
+    console.log(`Flowsense server  →  port ${PORT}`);
+    console.log(`DB host           →  ${process.env.MYSQL_HOST ?? "localhost"}`);
+    console.log(`DB name           →  ${process.env.MYSQL_DATABASE ?? "flowsense"}`);
+    console.log(`Endpoints ready:`);
+    console.log(`  POST /api/data          ← ESP32 sends here`);
+    console.log(`  GET  /api/stream        ← browser SSE`);
+    console.log(`  GET  /api/reports/weekly|monthly`);
+    console.log(`  GET  /api/bills         POST /api/bills/generate`);
+    console.log("─────────────────────────────────────────");
   });
 }
 

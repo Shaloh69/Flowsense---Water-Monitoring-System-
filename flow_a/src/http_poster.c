@@ -14,8 +14,8 @@
 
 static const char *TAG = "POST";
 
-// ── POST interval ─────────────────────────────────────────────────────────────
-#define POST_INTERVAL_MS  2000
+// ── POST interval — defined in app_config.h as UPDATE_INTERVAL_MS ────────────
+#define POST_INTERVAL_MS  UPDATE_INTERVAL_MS
 
 // ── Task ─────────────────────────────────────────────────────────────────────
 static void poster_task(void *arg)
@@ -49,12 +49,14 @@ static void poster_task(void *arg)
             flow_sensor_get_volume_liters(FLOW_CH_OUT) * L_TO_M3,
             pressure_sensor_get_psi());
 
-        // HTTP client config — uses built-in cert bundle for HTTPS
+        ESP_LOGD(TAG, "POST body: %s", body);
+
+        // HTTP client config — timeout raised to 15 s to survive Render cold-start
         esp_http_client_config_t config = {
             .url                = url,
             .method             = HTTP_METHOD_POST,
             .crt_bundle_attach  = esp_crt_bundle_attach,
-            .timeout_ms         = 5000,
+            .timeout_ms         = 15000,
             .buffer_size        = 512,
             .buffer_size_tx     = 512,
         };
@@ -66,11 +68,14 @@ static void poster_task(void *arg)
         esp_err_t err = esp_http_client_perform(client);
         if (err == ESP_OK) {
             int status = esp_http_client_get_status_code(client);
-            if (status != 200) {
+            if (status == 200) {
+                ESP_LOGI(TAG, "OK 200 — data accepted by server");
+            } else {
                 ESP_LOGW(TAG, "Server replied HTTP %d", status);
             }
         } else {
-            ESP_LOGW(TAG, "POST failed: %s", esp_err_to_name(err));
+            ESP_LOGW(TAG, "POST failed (%s) — will retry in %d ms",
+                     esp_err_to_name(err), POST_INTERVAL_MS);
         }
 
         esp_http_client_cleanup(client);

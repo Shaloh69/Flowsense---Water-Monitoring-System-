@@ -35,6 +35,7 @@
 #define PRESS_V_MIN         0.5f    // transducer voltage at 0 PSI  (V)
 #define PRESS_V_MAX         4.5f    // transducer voltage at 30 PSI (V)
 #define PRESS_PSI_MAX       30.0f
+#define PRESS_NOISE_OFFSET  5.0f   // subtract from raw reading to correct noise floor
 
 // ── Flow Sensor Calibration (YF-S201) ─────────────────────────────────────────
 #define YF_S201_FACTOR      7.5f    // flow rate (L/min) = freq_Hz / 7.5
@@ -53,6 +54,9 @@
 // ── Task Periods ──────────────────────────────────────────────────────────────
 #define FLOW_TASK_PERIOD_MS     250
 #define PRESSURE_TASK_PERIOD_MS 500
+
+// ── POST / update interval ────────────────────────────────────────────────────
+#define UPDATE_INTERVAL_MS      10000   // new values sent to server every 10 s
 
 // ── WiFi ──────────────────────────────────────────────────────────────────────
 #define WIFI_RECONNECT_MS       10000   // how often task_wifi_manager checks connection

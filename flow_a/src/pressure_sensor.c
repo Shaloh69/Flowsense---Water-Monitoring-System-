@@ -56,6 +56,8 @@ static float raw_to_psi(int16_t raw)
     float psi = (v_sensor - PRESS_V_MIN) /
                 (PRESS_V_MAX - PRESS_V_MIN) * PRESS_PSI_MAX;
 
+    psi -= PRESS_NOISE_OFFSET;
+
     if (psi < 0.0f)          psi = 0.0f;
     if (psi > PRESS_PSI_MAX) psi = PRESS_PSI_MAX;
 

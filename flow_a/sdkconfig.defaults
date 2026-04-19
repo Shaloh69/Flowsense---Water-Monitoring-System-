@@ -5,19 +5,31 @@ CONFIG_NEWLIB_NANO_FORMATTING=n
 CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 
 # ── Power survival settings ───────────────────────────────────────────────────
-# These are SOFTWARE MITIGATIONS only. The root cause is hardware:
-# HLK-PM01 → AMS1117-3.3 cannot source the ~400 mA phy_init calibration spike.
-# The voltage drops below 2.43 V (BOD threshold) and below 2.7 V (CPU minimum).
-# PERMANENT FIX: add a 470 µF capacitor between the ESP32 3V3 pin and GND.
+# Root cause: HLK-PM01 → AMS1117-3.3 cannot source the ~400 mA phy_init spike.
+# HARDWARE FIX (applied): 470 µF capacitor between ESP32 3V3 pin and GND.
+# Software mitigations below work alongside the cap.
 
-# Disable brownout detector — prevents BOD from resetting before phy_init completes.
-# Without this: rst:0x3 (SW_RESET) triggered by BOD at ~2.43 V.
+# Disable brownout detector — BOD fires at 2.43 V before phy_init finishes.
+# Cap reduces the droop but BOD stays disabled as a safety net.
 CONFIG_ESP_BROWNOUT_DET=n
 
-# Reduce WiFi TX power 20 dBm → 10 dBm — cuts peak RF current draw by ~50%.
-CONFIG_ESP32_PHY_MAX_WIFI_TX_POWER=10
+# Reduce WiFi TX power 20 dBm → 8 dBm — cuts peak RF current by ~60 %.
+# Previously 10 dBm; lowered further because full calibration still caused crashes.
+CONFIG_ESP32_PHY_MAX_WIFI_TX_POWER=8
 
-# Disable PHY calibration NVS storage — full calibration runs every boot (~200 ms extra)
-# but avoids the crash-before-save loop where no data is ever written.
-CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE=n
-CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE=n
+# ── PHY calibration storage — RE-ENABLED now that cap is fitted ──────────────
+# Previously disabled because: crash during full calibration → data never saved
+# → full calibration runs every boot → crash loop.
+#
+# With the 470 µF cap the first boot survives long enough to SAVE calibration
+# data to NVS (phy_init partition).  Every subsequent boot uses PARTIAL
+# calibration (~5 ms, tiny current) → no spike → no crash.
+#
+# First boot after flashing may still stutter once — that is normal and expected.
+# If it loops more than twice, the cap is too small or poorly placed.
+CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE=y
+CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE=y
+
+# Disable interrupt watchdog — prevents IWDT from firing during the ~200 ms
+# full calibration window on the very first boot.
+CONFIG_ESP_INT_WDT=n
