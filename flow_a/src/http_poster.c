@@ -14,30 +14,35 @@
 
 static const char *TAG = "POST";
 
-// ── POST interval — defined in app_config.h as UPDATE_INTERVAL_MS ────────────
 #define POST_INTERVAL_MS  UPDATE_INTERVAL_MS
 
-// ── Task ─────────────────────────────────────────────────────────────────────
 static void poster_task(void *arg)
 {
-    // If no server URL is configured, just exit
     if (strlen(RENDER_SERVER_URL) == 0) {
         ESP_LOGW(TAG, "RENDER_SERVER_URL not set — poster task exiting");
         vTaskDelete(NULL);
         return;
     }
 
-    ESP_LOGI(TAG, "HTTP poster started → %s/api/data", RENDER_SERVER_URL);
-
     char url[256];
     snprintf(url, sizeof(url), "%s/api/data", RENDER_SERVER_URL);
+    ESP_LOGI(TAG, "HTTP poster ready — will POST to: %s every %d ms", url, POST_INTERVAL_MS);
+
+    int post_count = 0;
 
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(POST_INTERVAL_MS));
 
-        if (!wifi_is_connected()) continue;
+        // ── WiFi gate ─────────────────────────────────────────────────────────
+        if (!wifi_is_connected()) {
+            ESP_LOGW(TAG, "WiFi not connected — skipping POST (will retry in %d ms)",
+                     POST_INTERVAL_MS);
+            continue;
+        }
 
-        // Build JSON body
+        post_count++;
+
+        // ── Build JSON body ───────────────────────────────────────────────────
         char body[256];
         int  blen = snprintf(body, sizeof(body),
             "{\"flow_in_m3h\":%.4f,\"flow_out_m3h\":%.4f,"
@@ -49,16 +54,17 @@ static void poster_task(void *arg)
             flow_sensor_get_volume_liters(FLOW_CH_OUT) * L_TO_M3,
             pressure_sensor_get_psi());
 
-        ESP_LOGD(TAG, "POST body: %s", body);
+        ESP_LOGI(TAG, "[#%d] POST → %s", post_count, url);
+        ESP_LOGI(TAG, "[#%d] Body: %s", post_count, body);
 
-        // HTTP client config — timeout raised to 15 s to survive Render cold-start
+        // ── HTTP request ──────────────────────────────────────────────────────
         esp_http_client_config_t config = {
-            .url                = url,
-            .method             = HTTP_METHOD_POST,
-            .crt_bundle_attach  = esp_crt_bundle_attach,
-            .timeout_ms         = 15000,
-            .buffer_size        = 512,
-            .buffer_size_tx     = 512,
+            .url               = url,
+            .method            = HTTP_METHOD_POST,
+            .crt_bundle_attach = esp_crt_bundle_attach,
+            .timeout_ms        = 15000,
+            .buffer_size       = 512,
+            .buffer_size_tx    = 512,
         };
 
         esp_http_client_handle_t client = esp_http_client_init(&config);
@@ -69,13 +75,13 @@ static void poster_task(void *arg)
         if (err == ESP_OK) {
             int status = esp_http_client_get_status_code(client);
             if (status == 200) {
-                ESP_LOGI(TAG, "OK 200 — data accepted by server");
+                ESP_LOGI(TAG, "[#%d] ✓ Server accepted — HTTP 200", post_count);
             } else {
-                ESP_LOGW(TAG, "Server replied HTTP %d", status);
+                ESP_LOGW(TAG, "[#%d] Server replied HTTP %d", post_count, status);
             }
         } else {
-            ESP_LOGW(TAG, "POST failed (%s) — will retry in %d ms",
-                     esp_err_to_name(err), POST_INTERVAL_MS);
+            ESP_LOGE(TAG, "[#%d] POST FAILED: %s  (IP: %s  URL: %s)",
+                     post_count, esp_err_to_name(err), wifi_get_ip(), url);
         }
 
         esp_http_client_cleanup(client);
@@ -84,5 +90,6 @@ static void poster_task(void *arg)
 
 void http_poster_start(void)
 {
+    ESP_LOGI(TAG, "Starting HTTP poster task (stack=8192, prio=4)");
     xTaskCreate(poster_task, "http_poster", 8192, NULL, 4, NULL);
 }

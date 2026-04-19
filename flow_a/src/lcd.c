@@ -126,7 +126,7 @@ static void lcd_task(void *arg)
     char line[LCD_COLS + 1];
 
     while (1) {
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(UPDATE_INTERVAL_MS));
 
         float fin_m3min  = flow_sensor_get_rate_lpm(FLOW_CH_IN)  * LPM_TO_M3MIN;
         float fout_m3min = flow_sensor_get_rate_lpm(FLOW_CH_OUT) * LPM_TO_M3MIN;

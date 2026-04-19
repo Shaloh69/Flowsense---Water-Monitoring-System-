@@ -121,7 +121,12 @@ static void wifi_event_handler(void *arg, esp_event_base_t base,
         s_connected   = true;
         s_retry_count = 0;
         xEventGroupSetBits(s_wifi_eg, WIFI_CONNECTED_BIT);
-        ESP_LOGI(TAG, "Got IP: %s", s_ip);
+        ESP_LOGI(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        ESP_LOGI(TAG, "WiFi CONNECTED ✓");
+        ESP_LOGI(TAG, "  IP      : %s", s_ip);
+        ESP_LOGI(TAG, "  Gateway : " IPSTR, IP2STR(&evt->ip_info.gw));
+        ESP_LOGI(TAG, "  Netmask : " IPSTR, IP2STR(&evt->ip_info.netmask));
+        ESP_LOGI(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     }
 }
 

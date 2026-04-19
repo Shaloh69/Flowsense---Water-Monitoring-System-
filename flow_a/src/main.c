@@ -22,17 +22,21 @@ static void task_wifi_manager(void *arg)
 {
     bool server_started = false;
 
-    ESP_LOGI(TAG, "task_wifi_manager: calling wifi_connect()");
+    ESP_LOGI(TAG, "Connecting to WiFi SSID: \"%s\" ...", DEFAULT_WIFI_SSID);
 
     esp_err_t err = wifi_connect();
     if (err == ESP_OK) {
-        ESP_LOGI(TAG, "WiFi connected — IP: %s", wifi_get_ip());
+        ESP_LOGI(TAG, "WiFi OK — IP: %s — starting HTTP poster", wifi_get_ip());
         http_poster_start();
         server_started = true;
-    } else {
-        ESP_LOGW(TAG, "WiFi connect failed — starting provisioning AP");
+    } else if (err == ESP_ERR_TIMEOUT) {
+        ESP_LOGE(TAG, "WiFi TIMEOUT — SSID \"%s\" not found or wrong password", DEFAULT_WIFI_SSID);
+        ESP_LOGW(TAG, "Starting provisioning AP \"%s\" — connect and enter credentials", AP_SSID);
         wifi_start_provisioning_mode();
-        // Stay in provisioning until the user saves credentials (causes reboot)
+        while (1) vTaskDelay(pdMS_TO_TICKS(10000));
+    } else {
+        ESP_LOGE(TAG, "WiFi FAILED (err=%s) — starting provisioning AP", esp_err_to_name(err));
+        wifi_start_provisioning_mode();
         while (1) vTaskDelay(pdMS_TO_TICKS(10000));
     }
 
