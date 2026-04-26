@@ -13,8 +13,8 @@ CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 # Cap reduces the droop but BOD stays disabled as a safety net.
 CONFIG_ESP_BROWNOUT_DET=n
 
-# Reduce WiFi TX power 20 dBm → 8 dBm — cuts peak RF current by ~60 %.
-# Previously 10 dBm; lowered further because full calibration still caused crashes.
+# TX power 8 dBm — balances RF reliability (4-way handshake) with current draw.
+# PHY calibration is now cached in NVS so the big init spike only happens once.
 CONFIG_ESP32_PHY_MAX_WIFI_TX_POWER=8
 
 # ── PHY calibration storage — RE-ENABLED now that cap is fitted ──────────────

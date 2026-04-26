@@ -4,6 +4,7 @@
 #include "pressure_sensor.h"
 #include "http_poster.h"
 #include "lcd.h"
+#include "sensor_snapshot.h"
 
 #include "nvs_flash.h"
 #include "esp_log.h"
@@ -12,41 +13,73 @@
 
 static const char *TAG = "APP";
 
+// ── Task: Sensor snapshot refresh ────────────────────────────────────────────
+// Reads ALL sensors once every UPDATE_INTERVAL_MS into g_snap.
+// lcd_task and poster_task both read from g_snap — same values, same moment.
+
+static void task_sensor_refresh(void *arg)
+{
+    while (1) {
+        vTaskDelay(pdMS_TO_TICKS(UPDATE_INTERVAL_MS));
+
+        g_snap.flow_in_m3h   = flow_sensor_get_rate_lpm(FLOW_CH_IN)       * LPM_TO_M3H;
+        g_snap.flow_out_m3h  = flow_sensor_get_rate_lpm(FLOW_CH_OUT)      * LPM_TO_M3H;
+        g_snap.volume_in_m3  = flow_sensor_get_volume_liters(FLOW_CH_IN)  * L_TO_M3;
+        g_snap.volume_out_m3 = flow_sensor_get_volume_liters(FLOW_CH_OUT) * L_TO_M3;
+        g_snap.pressure_psi  = pressure_sensor_get_psi();
+
+        ESP_LOGI(TAG, "SNAP  IN:%.4f m3/h  OUT:%.4f m3/h  Vi:%.4f m3  Vo:%.4f m3  PRES:%.2f PSI",
+                 g_snap.flow_in_m3h, g_snap.flow_out_m3h,
+                 g_snap.volume_in_m3, g_snap.volume_out_m3,
+                 g_snap.pressure_psi);
+
+        // Notify LCD and HTTP poster — they display/send this exact snapshot
+        if (g_lcd_task_handle)    xTaskNotifyGive(g_lcd_task_handle);
+        if (g_poster_task_handle) xTaskNotifyGive(g_poster_task_handle);
+    }
+}
+
 // ── Task: WiFi manager ────────────────────────────────────────────────────────
-// Mirrors BlueWatt's task_wifi_manager exactly.
-// wifi_connect() is called from here — never from app_main — so that
-// esp_wifi_start() / phy_init fires from a FreeRTOS task context with the
-// idle task already running and all other tasks quiescent.
+// wifi_connect() called from task context — never from app_main — so that
+// esp_wifi_start() / phy_init fires with the scheduler already running.
+// No provisioning AP. Retries indefinitely until "Team Flores 2.4" is reachable.
 
 static void task_wifi_manager(void *arg)
 {
     bool server_started = false;
 
-    ESP_LOGI(TAG, "Connecting to WiFi SSID: \"%s\" ...", DEFAULT_WIFI_SSID);
+    // Give power rail time to stabilise before RF init (important on charger startup)
+    vTaskDelay(pdMS_TO_TICKS(2000));
 
-    esp_err_t err = wifi_connect();
-    if (err == ESP_OK) {
-        ESP_LOGI(TAG, "WiFi OK — IP: %s — starting HTTP poster", wifi_get_ip());
-        http_poster_start();
-        server_started = true;
-    } else if (err == ESP_ERR_TIMEOUT) {
-        ESP_LOGE(TAG, "WiFi TIMEOUT — SSID \"%s\" not found or wrong password", DEFAULT_WIFI_SSID);
-        ESP_LOGW(TAG, "Starting provisioning AP \"%s\" — connect and enter credentials", AP_SSID);
-        wifi_start_provisioning_mode();
-        while (1) vTaskDelay(pdMS_TO_TICKS(10000));
-    } else {
-        ESP_LOGE(TAG, "WiFi FAILED (err=%s) — starting provisioning AP", esp_err_to_name(err));
-        wifi_start_provisioning_mode();
-        while (1) vTaskDelay(pdMS_TO_TICKS(10000));
+    // Initial connect — retry indefinitely until we get an IP
+    while (1) {
+        ESP_LOGI(TAG, "Connecting to \"%s\" ...", DEFAULT_WIFI_SSID);
+        esp_err_t err = wifi_connect();
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "WiFi OK — IP: %s", wifi_get_ip());
+            if (!server_started) {
+                http_poster_start();
+                server_started = true;
+            }
+            break;
+        } else if (err == ESP_ERR_TIMEOUT) {
+            ESP_LOGW(TAG, "WiFi TIMEOUT — SSID \"%s\" not in range or wrong password — retrying in 15 s",
+                     DEFAULT_WIFI_SSID);
+        } else {
+            ESP_LOGW(TAG, "WiFi FAILED (%s) — retrying in 15 s", esp_err_to_name(err));
+        }
+        vTaskDelay(pdMS_TO_TICKS(15000));
     }
 
     // Reconnect loop
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(WIFI_RECONNECT_MS));
 
-        if (!wifi_is_connected()) {
-            ESP_LOGW(TAG, "WiFi lost — reconnecting...");
-            err = wifi_connect();
+        if (wifi_is_connected()) {
+            ESP_LOGI(TAG, "WiFi still connected — IP: %s", wifi_get_ip());
+        } else {
+            ESP_LOGW(TAG, "WiFi not connected — reconnecting...");
+            esp_err_t err = wifi_connect();
             if (err == ESP_OK) {
                 ESP_LOGI(TAG, "Reconnected — IP: %s", wifi_get_ip());
                 if (!server_started) {
@@ -54,39 +87,14 @@ static void task_wifi_manager(void *arg)
                     server_started = true;
                 }
             } else {
-                ESP_LOGW(TAG, "Reconnect failed — will retry in %d s",
-                         WIFI_RECONNECT_MS / 1000);
+                ESP_LOGW(TAG, "Reconnect failed (%s) — will retry in %d s",
+                         esp_err_to_name(err), WIFI_RECONNECT_MS / 1000);
             }
         }
     }
 }
 
-// ── Task: Sensor log ──────────────────────────────────────────────────────────
-// Periodically logs all sensor values to serial — useful for debugging
-// without needing to open the web dashboard.
-
-static void task_sensor_log(void *arg)
-{
-    while (1) {
-        vTaskDelay(pdMS_TO_TICKS(5000));
-
-        float fin_m3min  = flow_sensor_get_rate_lpm(FLOW_CH_IN)       * LPM_TO_M3MIN;
-        float fout_m3min = flow_sensor_get_rate_lpm(FLOW_CH_OUT)      * LPM_TO_M3MIN;
-        float vin_m3     = flow_sensor_get_volume_liters(FLOW_CH_IN)  * L_TO_M3;
-        float vout_m3    = flow_sensor_get_volume_liters(FLOW_CH_OUT) * L_TO_M3;
-        float psi        = pressure_sensor_get_psi();
-
-        ESP_LOGI(TAG, "IN:%.5f m3/min  OUT:%.5f m3/min  VolIN:%.4f m3  VolOUT:%.4f m3  PRES:%.2f PSI",
-                 fin_m3min, fout_m3min, vin_m3, vout_m3, psi);
-    }
-}
-
 // ── app_main ──────────────────────────────────────────────────────────────────
-// Mirrors BlueWatt's app_main structure:
-//   1. NVS
-//   2. Hardware peripherals
-//   3. wifi_init()  ← allocates WiFi stack only, NO RF start
-//   4. Create tasks  ← phy_init fires later inside task_wifi_manager
 
 void app_main(void)
 {
@@ -113,13 +121,11 @@ void app_main(void)
     lcd_init();
 
     // 5. WiFi stack allocation — NO RF start here
-    //    phy_init fires inside wifi_connect() called from task_wifi_manager.
-    //    This matches BlueWatt's wifi_init() in app_main pattern exactly.
     ESP_ERROR_CHECK(wifi_init());
 
     // 6. Create tasks
-    xTaskCreate(task_wifi_manager, "wifi_mgr",    4096, NULL, 3, NULL);
-    xTaskCreate(task_sensor_log,   "sensor_log",  2048, NULL, 2, NULL);
+    xTaskCreate(task_sensor_refresh, "snap_refresh", 2048, NULL, 4, NULL);
+    xTaskCreate(task_wifi_manager,   "wifi_mgr",     4096, NULL, 3, NULL);
 
     ESP_LOGI(TAG, "All tasks running");
 }

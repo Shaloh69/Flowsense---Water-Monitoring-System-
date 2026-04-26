@@ -35,21 +35,28 @@
 #define PRESS_V_MIN         0.5f    // transducer voltage at 0 PSI  (V)
 #define PRESS_V_MAX         4.5f    // transducer voltage at 30 PSI (V)
 #define PRESS_PSI_MAX       30.0f
-#define PRESS_NOISE_OFFSET  5.0f   // subtract from raw reading to correct noise floor
+#define PRESS_NOISE_OFFSET  5.0f   // coarse zero-offset; EMA filter smooths residual noise
+#define PRESS_EMA_ALPHA     0.25f  // EMA weight: 0.25 new + 0.75 old (smoothing)
+#define PRESS_DEADBAND_PSI  3.5f   // readings below this are forced to 0.0
 
 // ── Flow Sensor Calibration (YF-S201) ─────────────────────────────────────────
 #define YF_S201_FACTOR      7.5f    // flow rate (L/min) = freq_Hz / 7.5
 
-// ── Unit Conversion (SI — cubic metres per minute) ───────────────────────────
-#define LPM_TO_M3MIN        0.001f      // L/min  → m³/min (×0.001)
+// ── Unit Conversion ───────────────────────────────────────────────────────────
+#define LPM_TO_M3H          0.06f       // L/min  → m³/h  (×0.06)  — used for JSON + LCD
+#define LPM_TO_M3MIN        0.001f      // L/min  → m³/min (×0.001) — kept for reference
 #define L_TO_M3             0.001f      // litres → m³     (×0.001)
 
 // ── Default WiFi credentials (used when NVS has no saved credentials) ────────
-#define DEFAULT_WIFI_SSID       "Team Flores"
-#define DEFAULT_WIFI_PASS       "Lelachaiah1702"
+#define DEFAULT_WIFI_SSID       "Flowsense"
+#define DEFAULT_WIFI_PASS       "Flow12345"
 
 // ── Render cloud server ───────────────────────────────────────────────────────
 #define RENDER_SERVER_URL       "https://flowsense-server.onrender.com"
+
+// ── Demo mode ─────────────────────────────────────────────────────────────────
+// Comment out this line to restore the real ADS1115 pressure sensor.
+#define PRESSURE_DEMO_MODE
 
 // ── Task Periods ──────────────────────────────────────────────────────────────
 #define FLOW_TASK_PERIOD_MS     250
@@ -59,4 +66,4 @@
 #define UPDATE_INTERVAL_MS      10000   // new values sent to server every 10 s
 
 // ── WiFi ──────────────────────────────────────────────────────────────────────
-#define WIFI_RECONNECT_MS       10000   // how often task_wifi_manager checks connection
+#define WIFI_RECONNECT_MS       5000    // how often task_wifi_manager checks connection

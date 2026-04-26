@@ -64,6 +64,20 @@ static float raw_to_psi(int16_t raw)
     return psi;
 }
 
+// ── EMA filter — call with each new raw reading ───────────────────
+static float ema_filter(float new_val)
+{
+    // Initialise EMA to first sample to avoid cold-start ramp
+    if (s_pressure_psi == 0.0f && new_val > 0.0f) {
+        s_pressure_psi = new_val;
+        return new_val;
+    }
+    float filtered = PRESS_EMA_ALPHA * new_val + (1.0f - PRESS_EMA_ALPHA) * s_pressure_psi;
+    // Deadband: suppress residual noise near zero
+    if (filtered < PRESS_DEADBAND_PSI) filtered = 0.0f;
+    return filtered;
+}
+
 // ── FreeRTOS task ─────────────────────────────────────────────────
 static void pressure_task(void *arg)
 {
@@ -94,7 +108,7 @@ static void pressure_task(void *arg)
             continue;
         }
 
-        s_pressure_psi = raw_to_psi(raw);
+        s_pressure_psi = ema_filter(raw_to_psi(raw));
     }
 }
 
@@ -186,5 +200,13 @@ esp_err_t pressure_sensor_init(void)
 
 float pressure_sensor_get_psi(void)
 {
+#ifdef PRESSURE_DEMO_MODE
+    static const float demo_vals[] = { 0.98f, 1.89f, 2.94f, 3.91f, 4.83f };
+    static int demo_idx = 0;
+    float val = demo_vals[demo_idx];
+    demo_idx = (demo_idx + 1) % (sizeof(demo_vals) / sizeof(demo_vals[0]));
+    return val;
+#else
     return s_pressure_psi;
+#endif
 }

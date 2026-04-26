@@ -1,7 +1,6 @@
 #include "lcd.h"
 #include "app_config.h"
-#include "flow_sensor.h"
-#include "pressure_sensor.h"
+#include "sensor_snapshot.h"
 
 #include "driver/i2c.h"
 #include "freertos/FreeRTOS.h"
@@ -123,24 +122,25 @@ static void i2c_scan(void)
 //
 static void lcd_task(void *arg)
 {
+    g_lcd_task_handle = xTaskGetCurrentTaskHandle();
     char line[LCD_COLS + 1];
 
     while (1) {
-        vTaskDelay(pdMS_TO_TICKS(UPDATE_INTERVAL_MS));
+        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(UPDATE_INTERVAL_MS + 2000));
 
-        float fin_m3min  = flow_sensor_get_rate_lpm(FLOW_CH_IN)  * LPM_TO_M3MIN;
-        float fout_m3min = flow_sensor_get_rate_lpm(FLOW_CH_OUT) * LPM_TO_M3MIN;
-        float vin_m3     = flow_sensor_get_volume_liters(FLOW_CH_IN)  * L_TO_M3;
-        float vout_m3    = flow_sensor_get_volume_liters(FLOW_CH_OUT) * L_TO_M3;
-        float psi        = pressure_sensor_get_psi();
+        float fin_m3h  = g_snap.flow_in_m3h;
+        float fout_m3h = g_snap.flow_out_m3h;
+        float vin_m3   = g_snap.volume_in_m3;
+        float vout_m3  = g_snap.volume_out_m3;
+        float psi      = g_snap.pressure_psi;
 
-        // Row 0: inlet flow rate  "IN:  0.00000 m3/min"
-        snprintf(line, sizeof(line), "IN: %7.5f m3/min ", fin_m3min);
+        // Row 0: inlet flow rate  "IN:  0.0000 m3/h    "
+        snprintf(line, sizeof(line), "IN: %8.4f m3/h  ", fin_m3h);
         lcd_set_cursor(0, 0); esp_rom_delay_us(500);
         lcd_print(line);
 
         // Row 1: outlet flow rate
-        snprintf(line, sizeof(line), "OUT:%7.5f m3/min ", fout_m3min);
+        snprintf(line, sizeof(line), "OUT:%8.4f m3/h  ", fout_m3h);
         lcd_set_cursor(1, 0); esp_rom_delay_us(500);
         lcd_print(line);
 
