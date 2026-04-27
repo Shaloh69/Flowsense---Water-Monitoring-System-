@@ -56,7 +56,7 @@
 
 // ── Demo mode ─────────────────────────────────────────────────────────────────
 // Comment out this line to restore the real ADS1115 pressure sensor.
-#define PRESSURE_DEMO_MODE
+// #define PRESSURE_DEMO_MODE
 
 // ── Task Periods ──────────────────────────────────────────────────────────────
 #define FLOW_TASK_PERIOD_MS     250

@@ -49,49 +49,42 @@ async function migrate(): Promise<void> {
   console.log("[DB] Tables ready");
 }
 
-// ── Seed data — 14 days (April 1–14 2026, 4-person Philippine household) ──────
-// Context:
-//   Apr 1–5  = Holy Week (families home → higher weekend-like usage)
-//   Weekdays = ~670 L/day   Weekends/holidays = ~850–960 L/day
-//   Peak flow is in m³/min (field name says m3h but ESP sends L/min × 0.001)
-//   Outlet ≈ 94 % of inlet (drinking water, evaporation loss)
-
-// Outlet ≈ 97 % of inlet — models YF-S201 sensor-to-sensor measurement tolerance
-// on a healthy pipe with no leaks. The ~3 % gap is normal for two Hall-effect
-// sensors on the same flow line (rated ±3–5 % accuracy each).
+// ── Seed data — 12 days (April 15–26 2026, 4-person Philippine household) ──────
+// Billing period: April 15–26.  Meter: 1442 → 1452 m³  (10 m³ total consumption).
+// Weekdays ≈ 0.770–0.820 m³/day, weekends ≈ 0.880–0.940 m³/day.
+// Outlet ≈ 97 % of inlet (YF-S201 sensor tolerance, healthy pipe, no leaks).
+// Peak pressure cycles: [0.98, 1.89, 2.94, 3.91, 4.83] PSI (matches ESP32 demo).
 const SEED_ROWS = [
-  // date          vol_in   vol_out  readings  peak_psi  peak_fin  peak_fout
-  ["2026-04-01",   0.825,   0.800,   40200,    16.8,     0.0072,   0.0070],  // Holy Wed
-  ["2026-04-02",   0.868,   0.842,   41500,    17.1,     0.0075,   0.0073],  // Maundy Thu
-  ["2026-04-03",   0.558,   0.541,   38900,    15.4,     0.0054,   0.0052],  // Good Fri (quiet)
-  ["2026-04-04",   0.632,   0.613,   39800,    16.0,     0.0061,   0.0059],  // Black Sat
-  ["2026-04-05",   0.957,   0.928,   42100,    17.5,     0.0083,   0.0081],  // Easter Sun (guests)
-  ["2026-04-06",   0.671,   0.651,   40300,    16.5,     0.0066,   0.0064],  // Mon
-  ["2026-04-07",   0.658,   0.638,   39900,    15.8,     0.0064,   0.0062],  // Tue
-  ["2026-04-08",   0.681,   0.661,   40700,    16.2,     0.0067,   0.0065],  // Wed
-  ["2026-04-09",   0.703,   0.682,   41200,    16.7,     0.0070,   0.0068],  // Thu
-  ["2026-04-10",   0.690,   0.669,   40500,    16.4,     0.0068,   0.0066],  // Fri
-  ["2026-04-11",   0.914,   0.887,   42800,    17.8,     0.0081,   0.0079],  // Sat (laundry)
-  ["2026-04-12",   0.849,   0.823,   41900,    17.2,     0.0075,   0.0073],  // Sun
-  ["2026-04-13",   0.661,   0.641,   39600,    15.9,     0.0063,   0.0061],  // Mon
-  ["2026-04-14",   0.675,   0.655,   40100,    16.1,     0.0065,   0.0063],  // Tue
+  // date          vol_in  vol_out  readings  peak_psi  peak_fin  peak_fout
+  ["2026-04-15",   0.790,  0.766,   41200,    0.98,     0.0069,   0.0067],  // Wed
+  ["2026-04-16",   0.810,  0.786,   41400,    1.89,     0.0070,   0.0068],  // Thu
+  ["2026-04-17",   0.780,  0.757,   41100,    2.94,     0.0068,   0.0066],  // Fri
+  ["2026-04-18",   0.920,  0.892,   42400,    3.91,     0.0080,   0.0078],  // Sat (laundry)
+  ["2026-04-19",   0.900,  0.873,   42200,    4.83,     0.0078,   0.0076],  // Sun
+  ["2026-04-20",   0.800,  0.776,   41300,    0.98,     0.0070,   0.0068],  // Mon
+  ["2026-04-21",   0.770,  0.747,   41000,    1.89,     0.0067,   0.0065],  // Tue
+  ["2026-04-22",   0.790,  0.766,   41200,    2.94,     0.0069,   0.0067],  // Wed
+  ["2026-04-23",   0.820,  0.795,   41500,    3.91,     0.0071,   0.0069],  // Thu
+  ["2026-04-24",   0.800,  0.776,   41300,    4.83,     0.0070,   0.0068],  // Fri
+  ["2026-04-25",   0.940,  0.912,   42600,    0.98,     0.0082,   0.0080],  // Sat (peak)
+  ["2026-04-26",   0.880,  0.854,   42000,    1.89,     0.0077,   0.0075],  // Sun
 ] as const;
 
 async function seed(): Promise<void> {
   const [rows] = await pool.execute<RowDataPacket[]>(
-    "SELECT COUNT(*) AS cnt, COALESCE(MAX(CASE WHEN `date`='2026-04-01' THEN volume_out_m3 END), -1) AS apr1_out FROM daily_summaries",
+    "SELECT COUNT(*) AS cnt, COALESCE(MAX(CASE WHEN `date`='2026-04-15' THEN volume_in_m3 END), -1) AS apr15_in FROM daily_summaries",
   );
-  const count      = Number(rows[0].cnt);
-  const apr1Out    = Number(rows[0].apr1_out);
-  const isOldSeed  = Math.abs(apr1Out - 0.779) < 0.001; // old wrong 94% value
+  const count     = Number(rows[0].cnt);
+  const apr15In   = Number(rows[0].apr15_in);
+  const isCurrent = Math.abs(apr15In - 0.790) < 0.001;
 
-  if (count > 0 && !isOldSeed) {
+  if (count > 0 && isCurrent) {
     console.log(`[DB] daily_summaries has ${count} rows and is up to date — skipping seed`);
     return;
   }
 
-  if (isOldSeed) {
-    console.log("[DB] Old seed data detected (94% outlet) — clearing and reseeding with corrected values…");
+  if (count > 0) {
+    console.log("[DB] Stale seed data detected — clearing and reseeding…");
     await pool.execute("DELETE FROM daily_summaries");
   } else {
     console.log(`[DB] Seeding ${SEED_ROWS.length} days of demo data…`);
@@ -108,10 +101,11 @@ async function seed(): Promise<void> {
   }
 
   const totalIn = SEED_ROWS.reduce((s, r) => s + r[1], 0);
+  const cost    = totalIn <= 10 ? 259.16 : 259.16 + (totalIn - 10) * 28.64;
   console.log(
     `[DB] Seed complete — ${SEED_ROWS.length} days,` +
     ` ${totalIn.toFixed(3)} m³ total inlet,` +
-    ` est. ₱${(totalIn * 28.5).toFixed(2)} @ ₱28.50/m³`,
+    ` est. ₱${cost.toFixed(2)} (tiered billing)`,
   );
 }
 

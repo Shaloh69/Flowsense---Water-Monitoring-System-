@@ -261,6 +261,32 @@ app.get("/api/reports/monthly", async (_req: Request, res: Response) => {
   }
 });
 
+// ── Tiered billing ────────────────────────────────────────────────────────────
+// Philippine water district rate structure:
+//   0 – 10 m³ : ₱259.16  (flat minimum charge)
+//  11 – 20 m³ : ₱28.64 / m³ above 10
+//  21 – 30 m³ : ₱33.71 / m³ above 20
+//  > 30 m³    : extends the last tier rate
+
+function tieredCost(m3: number): number {
+  if (m3 <= 10) return 259.16;
+  if (m3 <= 20) return 259.16 + (m3 - 10) * 28.64;
+  if (m3 <= 30) return 259.16 + 10 * 28.64 + (m3 - 20) * 33.71;
+  return 259.16 + 10 * 28.64 + 10 * 33.71 + (m3 - 30) * 33.71;
+}
+
+function tieredBreakdown(m3: number): string {
+  if (m3 <= 10)
+    return `0–10 m³ flat: ₱259.16`;
+  if (m3 <= 20)
+    return `0–10 m³ flat: ₱259.16 + ${(m3 - 10).toFixed(3)} m³ × ₱28.64 = ₱${((m3 - 10) * 28.64).toFixed(2)}`;
+  return (
+    `0–10 m³ flat: ₱259.16 + ` +
+    `10 m³ × ₱28.64 = ₱${(10 * 28.64).toFixed(2)} + ` +
+    `${(m3 - 20).toFixed(3)} m³ × ₱33.71 = ₱${((m3 - 20) * 33.71).toFixed(2)}`
+  );
+}
+
 // ── Bills ─────────────────────────────────────────────────────────────────────
 
 // GET /api/bills — all bills, newest first
@@ -294,26 +320,26 @@ app.get("/api/bills/periods", async (_req: Request, res: Response) => {
 });
 
 // POST /api/bills/generate — generate (or regenerate) a monthly bill
+// Body: { period: "YYYY-MM", price_per_m3?: number, notes?: string }
+// If price_per_m3 is omitted, tiered billing is applied automatically.
 app.post("/api/bills/generate", async (req: Request, res: Response) => {
   const { period, price_per_m3, notes } = req.body as {
     period: string;
-    price_per_m3: number;
+    price_per_m3?: number;
     notes?: string;
   };
 
-  if (!period || !price_per_m3) {
-    res.status(400).json({ error: "period and price_per_m3 are required" });
+  if (!period) {
+    res.status(400).json({ error: "period is required" });
     return;
   }
 
-  // Validate period format YYYY-MM
   if (!/^\d{4}-\d{2}$/.test(period)) {
     res.status(400).json({ error: "period must be YYYY-MM" });
     return;
   }
 
   try {
-    // Sum daily_summaries for that month
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT COALESCE(SUM(volume_in_m3), 0)  AS total_in,
               COALESCE(SUM(volume_out_m3), 0) AS total_out
@@ -322,9 +348,15 @@ app.post("/api/bills/generate", async (req: Request, res: Response) => {
       [period],
     );
 
-    const totalIn   = Number(rows[0].total_in);
-    const totalOut  = Number(rows[0].total_out);
-    const totalCost = totalIn * Number(price_per_m3);
+    const totalIn  = Number(rows[0].total_in);
+    const totalOut = Number(rows[0].total_out);
+
+    // Use custom flat rate if provided, otherwise apply tiered structure
+    const totalCost    = price_per_m3 != null ? totalIn * Number(price_per_m3) : tieredCost(totalIn);
+    const effectiveRate = totalIn > 0 ? totalCost / totalIn : 0;
+    const autoNotes    = price_per_m3 != null
+      ? (notes ?? null)
+      : `${tieredBreakdown(totalIn)}; total: ₱${totalCost.toFixed(2)}${notes ? " | " + notes : ""}`;
 
     await pool.execute(
       `INSERT INTO bills
@@ -337,7 +369,7 @@ app.post("/api/bills/generate", async (req: Request, res: Response) => {
          total_cost    = VALUES(total_cost),
          generated_at  = NOW(),
          notes         = VALUES(notes)`,
-      [period, totalIn, totalOut, Number(price_per_m3), totalCost, notes ?? null],
+      [period, totalIn, totalOut, effectiveRate, totalCost, autoNotes],
     );
 
     const [bill] = await pool.execute<RowDataPacket[]>(
@@ -345,7 +377,7 @@ app.post("/api/bills/generate", async (req: Request, res: Response) => {
       [period],
     );
 
-    console.log(`[BILL] Generated ${period}: ₱${totalCost.toFixed(2)} (${totalIn.toFixed(4)} m³ @ ₱${price_per_m3}/m³)`);
+    console.log(`[BILL] Generated ${period}: ₱${totalCost.toFixed(2)} (${totalIn.toFixed(4)} m³, effective ₱${effectiveRate.toFixed(4)}/m³)`);
     res.json(bill[0]);
   } catch (err) {
     console.error(err);
