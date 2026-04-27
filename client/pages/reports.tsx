@@ -264,7 +264,7 @@ export default function ReportsPage() {
             {/* ── Bar chart ───────────────────────────────────────────────── */}
             <div className="glass-card p-5">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-blue-300/50 mb-4">
-                Daily Volume ({tab === "weekly" ? "Last 7 Days" : "Last 30 Days"})
+                Daily Volume ({tab === "weekly" ? "This Week (Mon – Today)" : "This Month"})
               </p>
               <BarChart series={barSeries} xLabels={xLabels} height={220} unit="m³" />
             </div>

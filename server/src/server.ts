@@ -218,11 +218,23 @@ app.get("/api/data", (req: Request, res: Response) => {
 
 // ── Reports ───────────────────────────────────────────────────────────────────
 
-async function buildReport(days: number): Promise<DailySummary[]> {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - days + 1);
-  const cutoffStr = cutoff.toISOString().slice(0, 10);
+// Returns the date string (YYYY-MM-DD) of the most recent Monday (today if Monday).
+function getMostRecentMonday(): string {
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun, 1=Mon … 6=Sat
+  const offset = day === 0 ? 6 : day - 1; // days since last Monday
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - offset);
+  return monday.toISOString().slice(0, 10);
+}
 
+// Returns the first day of the current calendar month (YYYY-MM-01).
+function getFirstOfMonth(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+}
+
+async function buildReport(cutoffStr: string): Promise<DailySummary[]> {
   const [rows] = await pool.execute<RowDataPacket[]>(
     `SELECT \`date\`, volume_in_m3, volume_out_m3, reading_count,
             peak_pressure_psi, peak_flow_in_m3h, peak_flow_out_m3h
@@ -232,7 +244,7 @@ async function buildReport(days: number): Promise<DailySummary[]> {
     [cutoffStr],
   );
 
-  return rows.map((r) => ({
+  return (rows as RowDataPacket[]).map((r) => ({
     date:              String(r.date).slice(0, 10),
     volume_in_m3:      Number(r.volume_in_m3),
     volume_out_m3:     Number(r.volume_out_m3),
@@ -243,18 +255,20 @@ async function buildReport(days: number): Promise<DailySummary[]> {
   }));
 }
 
+// Weekly: from the most recent Monday to today
 app.get("/api/reports/weekly", async (_req: Request, res: Response) => {
   try {
-    res.json(await buildReport(7));
+    res.json(await buildReport(getMostRecentMonday()));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "DB error" });
   }
 });
 
+// Monthly: from the 1st of the current month to today
 app.get("/api/reports/monthly", async (_req: Request, res: Response) => {
   try {
-    res.json(await buildReport(30));
+    res.json(await buildReport(getFirstOfMonth()));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "DB error" });
